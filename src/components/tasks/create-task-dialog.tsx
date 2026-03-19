@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Sparkles, Loader2 } from "lucide-react";
-import { useTaskStore } from "../../../stores/task-store";
+import { useTaskStore, type Task } from "@/stores/task-store";
 
 interface Suggestion {
   subtasks: { title: string; priority: string }[];
@@ -41,7 +41,7 @@ export function CreateTaskDialog() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [selectedSubtasks, setSelectedSubtasks] = useState<string[]>([]);
 
-  const { createTask, loading } = useTaskStore();
+  const { createTask, isLoading: loading } = useTaskStore();
 
   const fetchSuggestions = async () => {
     if (!title.trim()) return;
@@ -75,11 +75,11 @@ export function CreateTaskDialog() {
     const task = await createTask({
       title,
       description: description || undefined,
-      priority,
-      status,
+      priority: priority as Task["priority"],
+      status: status as Task["status"],
       dueDate: dueDate || undefined,
       recurrence: recurrence as Record<string, unknown> | undefined,
-    });
+    } as Partial<Task>);
 
     if (task && selectedSubtasks.length > 0) {
       for (const subtaskTitle of selectedSubtasks) {

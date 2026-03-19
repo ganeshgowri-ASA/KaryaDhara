@@ -12,7 +12,7 @@ import {
   type Task,
   type TaskStatus,
   type TaskPriority,
-} from "../../../types";
+} from "@/types";
 import { TaskQuickActions } from "./task-quick-actions";
 
 interface ListViewProps {

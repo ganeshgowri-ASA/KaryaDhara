@@ -10,13 +10,20 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
-import { useTaskStore } from "@/stores/task-store";
+import { useTaskStore, type TaskStatus, type TaskPriority } from "@/stores/task-store";
 
 export function TaskFilters() {
   const { filters, setFilters, fetchTasks } = useTaskStore();
 
   const handleFilterChange = (key: string, value: string) => {
-    const newFilters = { ...filters, [key]: value === "all" ? undefined : value };
+    const newFilters = { ...filters };
+    if (key === "status") {
+      newFilters.status = value === "all" ? undefined : [value as TaskStatus];
+    } else if (key === "priority") {
+      newFilters.priority = value === "all" ? undefined : [value as TaskPriority];
+    } else {
+      (newFilters as Record<string, unknown>)[key] = value === "all" ? undefined : value;
+    }
     setFilters(newFilters);
     setTimeout(fetchTasks, 0);
   };
@@ -41,7 +48,7 @@ export function TaskFilters() {
       </div>
 
       <Select
-        value={filters.status || "all"}
+        value={filters.status?.[0] || "all"}
         onValueChange={(v) => handleFilterChange("status", v)}
       >
         <SelectTrigger className="w-[140px]">
@@ -58,7 +65,7 @@ export function TaskFilters() {
       </Select>
 
       <Select
-        value={filters.priority || "all"}
+        value={filters.priority?.[0] || "all"}
         onValueChange={(v) => handleFilterChange("priority", v)}
       >
         <SelectTrigger className="w-[140px]">

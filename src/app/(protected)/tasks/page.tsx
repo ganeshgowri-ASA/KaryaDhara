@@ -27,10 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useTaskStore } from "../../../../stores";
-import { useViewStore } from "../../../../stores";
-import { useTasks } from "../../../../hooks";
-import type { TaskPriority } from "../../../../types";
+import { useTaskStore } from "@/stores";
+import { useViewStore } from "@/stores";
+import { useTasks } from "@/hooks";
+import type { TaskPriority } from "@/types";
 
 import { ViewSwitcher } from "@/components/tasks/view-switcher";
 import { FilterBar } from "@/components/tasks/filter-bar";

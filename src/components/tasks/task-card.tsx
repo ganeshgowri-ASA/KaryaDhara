@@ -8,7 +8,7 @@ import {
   PRIORITY_COLORS,
   STATUS_LABELS,
   type Task,
-} from "../../../types";
+} from "@/types";
 import { TaskQuickActions } from "./task-quick-actions";
 
 interface TaskCardProps {

@@ -1,52 +1,7 @@
 import { create } from "zustand";
+import type { Task, TaskStatus, TaskPriority } from "@/types";
 
-export type TaskPriority = "P1" | "P2" | "P3" | "P4";
-export type TaskStatus =
-  | "TODO"
-  | "IN_PROGRESS"
-  | "IN_REVIEW"
-  | "DONE"
-  | "CANCELLED"
-  | "ARCHIVED";
-
-export interface TaskLabel {
-  labelId: string;
-  label: {
-    id: string;
-    name: string;
-    color: string;
-  };
-}
-
-export interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  status: TaskStatus;
-  priority: TaskPriority;
-  position: number;
-  dueDate: string | null;
-  startDate: string | null;
-  completedAt: string | null;
-  recurrence: Record<string, unknown> | null;
-  projectId: string | null;
-  sectionId: string | null;
-  assigneeId: string | null;
-  creatorId: string;
-  parentId: string | null;
-  isArchived: boolean;
-  metadata: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-  subtasks?: Task[];
-  labels?: TaskLabel[];
-  comments?: Comment[];
-  blockedBy?: { id: string; blockingId: string; blocking: { id: string; title: string } }[];
-  blocks?: { id: string; blockedId: string; blocked: { id: string; title: string } }[];
-  _count?: { subtasks: number; comments: number };
-  project?: { id: string; name: string; color: string } | null;
-  assignee?: { id: string; name: string | null; image: string | null } | null;
-}
+export type { Task, TaskStatus, TaskPriority };
 
 export interface Comment {
   id: string;
@@ -134,9 +89,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       if (projectId) params.set("projectId", projectId);
       const { filters } = get();
       if (filters.status?.length)
-        params.set("status", filters.status.join(","));
+        params.set("status", Array.isArray(filters.status) ? filters.status.join(",") : filters.status);
       if (filters.priority?.length)
-        params.set("priority", filters.priority.join(","));
+        params.set("priority", Array.isArray(filters.priority) ? filters.priority.join(",") : filters.priority);
       if (filters.search) params.set("search", filters.search);
       if (filters.labelId) params.set("labelId", filters.labelId);
 

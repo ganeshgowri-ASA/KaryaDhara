@@ -2,7 +2,7 @@
 
 // Re-export Prisma types for convenience
 export type { User, Workspace, WorkspaceMember, Project, Label, TaskLabel, Comment, ApiKey, Webhook, Timer } from "@prisma/client";
-export { Role, TaskStatus as PrismaTaskStatus, Priority } from "@prisma/client";
+export { Role, TaskStatus as PrismaTaskStatus, TaskPriority as PrismaTaskPriority } from "@prisma/client";
 
 // Application-level types
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE" | "CANCELLED" | "ARCHIVED";
@@ -14,7 +14,7 @@ export type DateRangeFilter = "all" | "today" | "this_week" | "this_month" | "ov
 export interface TaskUser {
   id: string;
   name: string | null;
-  email: string;
+  email?: string;
   image: string | null;
 }
 
@@ -51,16 +51,27 @@ export interface Task {
   creatorId: string;
   parentId: string | null;
   isArchived: boolean;
+  recurrence?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
-  assignee: TaskUser | null;
-  creator: TaskUser;
-  labels: TaskLabelEntry[];
-  subtasks: Task[];
-  blockedBy: TaskDependency[];
-  blocks: TaskDependency[];
-  section: { id: string; name: string; color: string | null } | null;
-  project: { id: string; name: string; color: string } | null;
+  comments?: Array<{
+    id: string;
+    content: string;
+    isEdited?: boolean;
+    createdAt: string;
+    updatedAt: string;
+    user?: { id: string; name: string | null; image: string | null };
+  }>;
+  _count?: { subtasks: number; comments: number };
+  assignee?: TaskUser | null;
+  creator?: TaskUser;
+  labels?: TaskLabelEntry[];
+  subtasks?: Task[];
+  blockedBy?: TaskDependency[];
+  blocks?: TaskDependency[];
+  section?: { id: string; name: string; color: string | null } | null;
+  project?: { id: string; name: string; color: string } | null;
 }
 
 export interface Section {

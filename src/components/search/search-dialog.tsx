@@ -76,50 +76,57 @@ export function SearchDialog() {
               <div className="p-4 text-center text-sm text-muted-foreground">
                 Searching...
               </div>
-            ) : results.length === 0 && query ? (
+            ) : results && (results.counts.tasks + results.counts.projects + results.counts.labels) === 0 && query ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
                 No results found
               </div>
-            ) : (
+            ) : results ? (
               <div className="space-y-1">
-                {results.map((result) => (
+                {results.tasks.map((task) => (
                   <button
-                    key={`${result.type}-${result.id}`}
+                    key={`task-${task.id}`}
                     className="flex w-full items-start gap-3 rounded-md p-3 text-left hover:bg-muted"
                     onClick={() => setOpen(false)}
                   >
-                    {typeIcon[result.type]}
+                    {typeIcon.task}
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">
-                          {result.title}
-                        </span>
-                        {result.status && (
-                          <Badge variant="outline" className="text-[10px]">
-                            {result.status}
-                          </Badge>
+                        <span className="text-sm font-medium">{task.title}</span>
+                        {task.status && (
+                          <Badge variant="outline" className="text-[10px]">{task.status}</Badge>
                         )}
-                        {result.priority && (
-                          <Badge variant="secondary" className="text-[10px]">
-                            {result.priority}
-                          </Badge>
+                        {task.priority && (
+                          <Badge variant="secondary" className="text-[10px]">{task.priority}</Badge>
                         )}
                       </div>
-                      {result.description && (
-                        <p className="line-clamp-1 text-xs text-muted-foreground">
-                          {result.description}
-                        </p>
-                      )}
-                      {result.projectName && (
-                        <p className="text-xs text-muted-foreground">
-                          in {result.projectName}
-                        </p>
+                      {task.project && (
+                        <p className="text-xs text-muted-foreground">in {task.project.name}</p>
                       )}
                     </div>
                   </button>
                 ))}
+                {results.projects.map((project) => (
+                  <button
+                    key={`project-${project.id}`}
+                    className="flex w-full items-start gap-3 rounded-md p-3 text-left hover:bg-muted"
+                    onClick={() => setOpen(false)}
+                  >
+                    {typeIcon.project}
+                    <span className="text-sm font-medium">{project.name}</span>
+                  </button>
+                ))}
+                {results.labels.map((label) => (
+                  <button
+                    key={`label-${label.id}`}
+                    className="flex w-full items-start gap-3 rounded-md p-3 text-left hover:bg-muted"
+                    onClick={() => setOpen(false)}
+                  >
+                    {typeIcon.label}
+                    <span className="text-sm font-medium">{label.name}</span>
+                  </button>
+                ))}
               </div>
-            )}
+            ) : null}
           </ScrollArea>
         </div>
       </DialogContent>

@@ -2,56 +2,105 @@
 
 import { create } from "zustand";
 
-export interface SearchResult {
-  id: string;
-  type: "task" | "project" | "label";
-  title: string;
-  description?: string | null;
+export interface SearchFilters {
   status?: string;
   priority?: string;
-  color?: string;
-  projectName?: string | null;
+  dueAfter?: string;
+  dueBefore?: string;
+}
+
+export interface SearchResults {
+  tasks: Array<{
+    id: string;
+    title: string;
+    status: string;
+    priority: string;
+    project?: { name: string } | null;
+  }>;
+  projects: Array<{
+    id: string;
+    name: string;
+    color: string;
+    _count?: { tasks: number };
+  }>;
+  labels: Array<{
+    id: string;
+    name: string;
+    color: string;
+    _count?: { tasks: number };
+  }>;
+  counts: { tasks: number; projects: number; labels: number };
 }
 
 interface SearchStore {
   query: string;
-  results: SearchResult[];
+  results: SearchResults | null;
+  filters: SearchFilters;
+  loading: boolean;
   isSearching: boolean;
   isOpen: boolean;
 
   setQuery: (query: string) => void;
+  setFilters: (filters: SearchFilters) => void;
+  clearFilters: () => void;
+  clearSearch: () => void;
   setOpen: (open: boolean) => void;
-  search: (query: string) => Promise<void>;
+  search: (query?: string) => Promise<void>;
   clearResults: () => void;
 }
 
-export const useSearchStore = create<SearchStore>((set) => ({
+export const useSearchStore = create<SearchStore>((set, get) => ({
   query: "",
-  results: [],
+  results: null,
+  filters: {},
+  loading: false,
   isSearching: false,
   isOpen: false,
 
   setQuery: (query) => set({ query }),
+  setFilters: (filters) => set({ filters }),
+  clearFilters: () => set({ filters: {} }),
+  clearSearch: () => set({ query: "", results: null, filters: {} }),
   setOpen: (isOpen) => set({ isOpen }),
-  clearResults: () => set({ results: [], query: "" }),
+  clearResults: () => set({ results: null, query: "" }),
 
-  search: async (query) => {
+  search: async (queryArg?: string) => {
+    const { filters } = get();
+    const query = queryArg !== undefined ? queryArg : get().query;
+    if (queryArg !== undefined) set({ query: queryArg });
     if (!query.trim()) {
-      set({ results: [], isSearching: false });
+      set({ results: null, loading: false });
       return;
     }
-    set({ isSearching: true, query });
+    set({ loading: true, isSearching: true });
     try {
-      const res = await fetch(
-        `/api/search?q=${encodeURIComponent(query)}`
-      );
+      const params = new URLSearchParams({ q: query });
+      if (filters.status) params.set("status", filters.status);
+      if (filters.priority) params.set("priority", filters.priority);
+      if (filters.dueAfter) params.set("dueAfter", filters.dueAfter);
+      if (filters.dueBefore) params.set("dueBefore", filters.dueBefore);
+
+      const res = await fetch(`/api/search?${params.toString()}`);
       if (!res.ok) throw new Error("Search failed");
       const json = await res.json();
-      set({ results: json.data });
+      set({
+        results: json.data
+          ? {
+              tasks: json.data.filter((r: { type: string }) => r.type === "task"),
+              projects: json.data.filter((r: { type: string }) => r.type === "project"),
+              labels: json.data.filter((r: { type: string }) => r.type === "label"),
+              counts: {
+                tasks: json.data.filter((r: { type: string }) => r.type === "task").length,
+                projects: json.data.filter((r: { type: string }) => r.type === "project").length,
+                labels: json.data.filter((r: { type: string }) => r.type === "label").length,
+              },
+            }
+          : json,
+      });
     } catch {
-      set({ results: [] });
+      set({ results: null });
     } finally {
-      set({ isSearching: false });
+      set({ loading: false, isSearching: false });
     }
   },
 }));
