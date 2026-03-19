@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { UserNav } from "@/components/user-nav";
 
 export default function ProtectedLayout({
@@ -9,7 +10,25 @@ export default function ProtectedLayout({
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <h1 className="text-lg font-semibold">KaryaDhara</h1>
+          <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="text-lg font-semibold">
+              KaryaDhara
+            </Link>
+            <nav className="flex items-center gap-4 text-sm">
+              <Link
+                href="/dashboard"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/tasks"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Tasks
+              </Link>
+            </nav>
+          </div>
           <UserNav />
         </div>
       </header>
