@@ -1,102 +1,94 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  getSessionUser,
-  unauthorized,
-  badRequest,
-  getOrCreateWorkspace,
-} from "@/lib/api-helpers";
-import { Prisma } from "@prisma/client";
+
+const taskInclude = {
+  assignee: { select: { id: true, name: true, email: true, image: true } },
+  creator: { select: { id: true, name: true, email: true, image: true } },
+  labels: { include: { label: true } },
+  subtasks: {
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      priority: true,
+      position: true,
+      dueDate: true,
+      startDate: true,
+      completedAt: true,
+      projectId: true,
+      sectionId: true,
+      assigneeId: true,
+      creatorId: true,
+      parentId: true,
+      isArchived: true,
+      createdAt: true,
+      updatedAt: true,
+      description: true,
+    },
+  },
+  blockedBy: {
+    include: {
+      blocking: { select: { id: true, title: true } },
+      blocked: { select: { id: true, title: true } },
+    },
+  },
+  blocks: {
+    include: {
+      blocking: { select: { id: true, title: true } },
+      blocked: { select: { id: true, title: true } },
+    },
+  },
+  section: { select: { id: true, name: true, color: true } },
+  project: { select: { id: true, name: true, color: true } },
+};
 
 export async function GET(req: NextRequest) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const { searchParams } = req.nextUrl;
+  const { searchParams } = new URL(req.url);
   const projectId = searchParams.get("projectId");
   const status = searchParams.get("status");
   const priority = searchParams.get("priority");
-  const search = searchParams.get("search");
-  const labelId = searchParams.get("labelId");
-  const parentId = searchParams.get("parentId");
 
-  const where: Prisma.TaskWhereInput = {
-    creatorId: user.id,
+  const where: Record<string, unknown> = {
+    parentId: null,
     isArchived: false,
-    parentId: parentId || null,
+    OR: [
+      { creatorId: session.user.id },
+      { assigneeId: session.user.id },
+    ],
   };
 
   if (projectId) where.projectId = projectId;
-  if (status) {
-    const statuses = status.split(",");
-    where.status = { in: statuses as Prisma.EnumTaskStatusFilter["in"] };
-  }
-  if (priority) {
-    const priorities = priority.split(",");
-    where.priority = {
-      in: priorities as Prisma.EnumTaskPriorityFilter["in"],
-    };
-  }
-  if (search) {
-    where.title = { contains: search, mode: "insensitive" };
-  }
-  if (labelId) {
-    where.labels = { some: { labelId } };
-  }
+  if (status) where.status = status;
+  if (priority) where.priority = priority;
 
   const tasks = await prisma.task.findMany({
     where,
-    include: {
-      subtasks: {
-        include: {
-          labels: { include: { label: true } },
-          _count: { select: { subtasks: true, comments: true } },
-        },
-        orderBy: { position: "asc" },
-      },
-      labels: { include: { label: true } },
-      comments: {
-        include: { user: { select: { id: true, name: true, image: true } } },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      },
-      project: { select: { id: true, name: true, color: true } },
-      assignee: { select: { id: true, name: true, image: true } },
-      blockedBy: {
-        include: {
-          blocking: { select: { id: true, title: true } },
-        },
-      },
-      blocks: {
-        include: {
-          blocked: { select: { id: true, title: true } },
-        },
-      },
-      _count: { select: { subtasks: true, comments: true } },
-    },
-    orderBy: { position: "asc" },
+    include: taskInclude,
+    orderBy: [{ position: "asc" }, { createdAt: "desc" }],
   });
 
-  return NextResponse.json(tasks);
+  return NextResponse.json({ tasks });
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const body = await req.json();
-  const { title, description, status, priority, dueDate, projectId, parentId, labels, recurrence } =
-    body;
+  const { title, description, status, priority, dueDate, startDate, projectId, sectionId, assigneeId, parentId } = body;
 
-  if (!title?.trim()) return badRequest("Title is required");
-
-  // Ensure workspace exists for label creation
-  await getOrCreateWorkspace(user.id);
-
-  const maxPosition = await prisma.task.aggregate({
-    where: { creatorId: user.id, parentId: parentId || null, projectId: projectId || null },
-    _max: { position: true },
-  });
+  if (!title || typeof title !== "string" || title.trim().length === 0) {
+    return NextResponse.json({ error: "Title is required" }, { status: 400 });
+  }
 
   const task = await prisma.task.create({
     data: {
@@ -104,26 +96,16 @@ export async function POST(req: NextRequest) {
       description: description || null,
       status: status || "TODO",
       priority: priority || "P3",
-      position: (maxPosition._max.position ?? 0) + 1,
       dueDate: dueDate ? new Date(dueDate) : null,
+      startDate: startDate ? new Date(startDate) : null,
       projectId: projectId || null,
+      sectionId: sectionId || null,
+      assigneeId: assigneeId || null,
       parentId: parentId || null,
-      creatorId: user.id,
-      recurrence: recurrence || null,
-      labels: labels?.length
-        ? {
-            create: labels.map((labelId: string) => ({ labelId })),
-          }
-        : undefined,
+      creatorId: session.user.id,
     },
-    include: {
-      subtasks: true,
-      labels: { include: { label: true } },
-      project: { select: { id: true, name: true, color: true } },
-      assignee: { select: { id: true, name: true, image: true } },
-      _count: { select: { subtasks: true, comments: true } },
-    },
+    include: taskInclude,
   });
 
-  return NextResponse.json(task, { status: 201 });
+  return NextResponse.json({ task }, { status: 201 });
 }
