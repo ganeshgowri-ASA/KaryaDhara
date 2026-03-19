@@ -25,6 +25,7 @@ export async function GET(
         orderBy: { createdAt: "desc" },
       },
       project: { select: { id: true, name: true, color: true } },
+      section: { select: { id: true, name: true, color: true } },
       assignee: { select: { id: true, name: true, image: true } },
       blockedBy: {
         include: { blocking: { select: { id: true, title: true } } },
@@ -59,9 +60,12 @@ export async function PATCH(
     status,
     priority,
     dueDate,
+    startDate,
     position,
     projectId,
+    sectionId,
     parentId,
+    assigneeId,
     recurrence,
     labels,
     isArchived,
@@ -78,9 +82,12 @@ export async function PATCH(
   }
   if (priority !== undefined) data.priority = priority;
   if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null;
+  if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
   if (position !== undefined) data.position = position;
   if (projectId !== undefined) data.projectId = projectId || null;
+  if (sectionId !== undefined) data.sectionId = sectionId || null;
   if (parentId !== undefined) data.parentId = parentId || null;
+  if (assigneeId !== undefined) data.assigneeId = assigneeId || null;
   if (recurrence !== undefined) data.recurrence = recurrence;
   if (isArchived !== undefined) data.isArchived = isArchived;
 
@@ -110,6 +117,7 @@ export async function PATCH(
       },
       labels: { include: { label: true } },
       project: { select: { id: true, name: true, color: true } },
+      section: { select: { id: true, name: true, color: true } },
       assignee: { select: { id: true, name: true, image: true } },
       _count: { select: { subtasks: true, comments: true } },
     },
