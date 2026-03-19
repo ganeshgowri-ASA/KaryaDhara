@@ -6,12 +6,9 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Calendar,
   RefreshCw,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
 } from "lucide-react";
 import { useTaskStore, Task } from "@/stores/task-store";
@@ -132,29 +129,18 @@ function TaskCard({ task }: { task: Task }) {
 }
 
 export function TaskList() {
-  const { tasks, pagination, isLoading, error, fetchTasks, setTasks } =
+  const { tasks, isLoading, fetchTasks } =
     useTaskStore();
 
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
 
-  const handlePageChange = (newPage: number) => {
-    setTasks(tasks, { ...pagination, page: newPage });
-    setTimeout(fetchTasks, 0);
-  };
-
   if (isLoading && tasks.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="py-12 text-center text-sm text-destructive">{error}</div>
     );
   }
 
@@ -171,33 +157,6 @@ export function TaskList() {
       {tasks.map((task) => (
         <TaskCard key={task.id} task={task} />
       ))}
-
-      {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4">
-          <span className="text-sm text-muted-foreground">
-            Page {pagination.page} of {pagination.totalPages} ({pagination.total}{" "}
-            tasks)
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={pagination.page <= 1}
-              onClick={() => handlePageChange(pagination.page - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => handlePageChange(pagination.page + 1)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
