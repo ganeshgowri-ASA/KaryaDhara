@@ -1,40 +1,8 @@
 import { create } from "zustand";
+import type { Task, TaskLabelEntry as TaskLabel } from "../types";
 
-export interface TaskLabel {
-  taskId: string;
-  labelId: string;
-  label: {
-    id: string;
-    name: string;
-    color: string;
-  };
-}
-
-export interface Task {
-  id: string;
-  title: string;
-  description?: string | null;
-  status: string;
-  priority: string;
-  position: number;
-  dueDate?: string | null;
-  startDate?: string | null;
-  completedAt?: string | null;
-  recurrence?: Record<string, unknown> | null;
-  projectId?: string | null;
-  sectionId?: string | null;
-  assigneeId?: string | null;
-  creatorId: string;
-  parentId?: string | null;
-  isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
-  labels?: TaskLabel[];
-  subtasks?: { id: string; title: string; status: string }[];
-  assignee?: { id: string; name: string | null; image: string | null } | null;
-  project?: { id: string; name: string; color: string } | null;
-  _count?: { comments: number; subtasks: number };
-}
+export type { Task };
+export type { TaskLabel };
 
 interface Pagination {
   page: number;

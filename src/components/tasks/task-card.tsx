@@ -17,6 +17,7 @@ interface TaskCardProps {
   onStatusChange?: (taskId: string, status: Task["status"]) => void;
   onPriorityChange?: (taskId: string, priority: Task["priority"]) => void;
   onTitleChange?: (taskId: string, title: string) => void;
+  onSelect?: (task: Task | null) => void;
   className?: string;
 }
 
@@ -26,6 +27,8 @@ export function TaskCard({
   onStatusChange,
   onPriorityChange,
   onTitleChange,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onSelect: _onSelect,
   className,
 }: TaskCardProps) {
   const [isEditing, setIsEditing] = React.useState(false);

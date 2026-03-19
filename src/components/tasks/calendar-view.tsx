@@ -35,15 +35,13 @@ import {
   PRIORITY_COLORS,
   STATUS_COLORS,
   type Task,
-  type TaskStatus,
-  type TaskPriority,
   type CalendarMode,
 } from "../../../types";
 
 interface CalendarViewProps {
   tasks: Task[];
-  onStatusChange: (taskId: string, status: TaskStatus) => void;
-  onPriorityChange: (taskId: string, priority: TaskPriority) => void;
+  onStatusChange: (taskId: string, status: string) => void;
+  onPriorityChange: (taskId: string, priority: string) => void;
   onDateChange: (taskId: string, dates: { dueDate?: string }) => void;
 }
 

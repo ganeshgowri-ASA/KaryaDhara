@@ -20,14 +20,12 @@ import {
   STATUS_COLORS,
   STATUS_LABELS,
   type Task,
-  type TaskStatus,
-  type TaskPriority,
 } from "../../../types";
 
 interface TimelineViewProps {
   tasks: Task[];
-  onStatusChange: (taskId: string, status: TaskStatus) => void;
-  onPriorityChange: (taskId: string, priority: TaskPriority) => void;
+  onStatusChange: (taskId: string, status: string) => void;
+  onPriorityChange: (taskId: string, priority: string) => void;
 }
 
 const DAY_WIDTH = 40;
@@ -336,7 +334,7 @@ export function TimelineView({
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
         <span className="font-medium">Legend:</span>
-        {(["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"] as TaskStatus[]).map((s) => (
+        {(["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"] as string[]).map((s) => (
           <span key={s} className="flex items-center gap-1">
             <span className={cn("h-2.5 w-6 rounded-sm", STATUS_COLORS[s])} />
             {STATUS_LABELS[s]}

@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useTaskStore } from "../stores";
-import type { Task, TaskStatus, TaskPriority } from "../types";
+import type { Task } from "../stores/task-store";
 
 const TASK_INCLUDE = "include=assignee,creator,labels,subtasks,blockedBy,blocks,section,project";
 
@@ -25,7 +25,7 @@ export function useTasks() {
   }, [setTasks, setLoading, setError]);
 
   const updateTaskStatus = useCallback(
-    async (taskId: string, status: TaskStatus) => {
+    async (taskId: string, status: string) => {
       updateTask(taskId, { status });
       try {
         const res = await fetch(`/api/tasks/${taskId}`, {
@@ -44,7 +44,7 @@ export function useTasks() {
   );
 
   const updateTaskPriority = useCallback(
-    async (taskId: string, priority: TaskPriority) => {
+    async (taskId: string, priority: string) => {
       updateTask(taskId, { priority });
       try {
         const res = await fetch(`/api/tasks/${taskId}`, {

@@ -5,3 +5,4 @@ export type { Label } from "./label-store";
 export { useNotificationStore } from "./notification-store";
 export type { Notification } from "./notification-store";
 export { useSearchStore } from "./search-store";
+export { useViewStore } from "./view-store";

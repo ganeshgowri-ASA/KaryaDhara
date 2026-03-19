@@ -40,7 +40,7 @@ import { TimelineView } from "@/components/tasks/timeline-view";
 import { ListView } from "@/components/tasks/list-view";
 
 export default function TasksPage() {
-  const { isLoading } = useTaskStore();
+  const { loading: isLoading } = useTaskStore();
   const { viewMode, searchQuery, statusFilter, priorityFilter, dateFilter } =
     useViewStore();
   const {

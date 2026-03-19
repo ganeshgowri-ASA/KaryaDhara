@@ -10,15 +10,13 @@ import {
   STATUS_LABELS,
   STATUS_COLORS,
   type Task,
-  type TaskStatus,
-  type TaskPriority,
 } from "../../../types";
 import { TaskQuickActions } from "./task-quick-actions";
 
 interface ListViewProps {
   tasks: Task[];
-  onStatusChange: (taskId: string, status: TaskStatus) => void;
-  onPriorityChange: (taskId: string, priority: TaskPriority) => void;
+  onStatusChange: (taskId: string, status: string) => void;
+  onPriorityChange: (taskId: string, priority: string) => void;
   onTitleChange: (taskId: string, title: string) => void;
 }
 
