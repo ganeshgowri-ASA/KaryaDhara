@@ -12,6 +12,8 @@ import {
   Plus,
   LayoutList,
   Columns3,
+  CalendarDays,
+  GanttChart,
   ChevronLeft,
   ChevronRight,
   Hash,
@@ -120,11 +122,11 @@ export function AppSidebar() {
 
           {/* View Toggle */}
           {sidebarOpen && (
-            <div className="flex items-center gap-1 px-3 py-2">
+            <div className="flex flex-wrap items-center gap-1 px-3 py-2">
               <Button
                 variant={viewMode === "list" ? "secondary" : "ghost"}
                 size="sm"
-                className="h-7 flex-1 text-xs"
+                className="h-7 flex-1 text-xs min-w-0"
                 onClick={() => setViewMode("list")}
               >
                 <LayoutList className="mr-1 h-3 w-3" />
@@ -133,11 +135,29 @@ export function AppSidebar() {
               <Button
                 variant={viewMode === "kanban" ? "secondary" : "ghost"}
                 size="sm"
-                className="h-7 flex-1 text-xs"
+                className="h-7 flex-1 text-xs min-w-0"
                 onClick={() => setViewMode("kanban")}
               >
                 <Columns3 className="mr-1 h-3 w-3" />
                 Board
+              </Button>
+              <Button
+                variant={viewMode === "calendar" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 flex-1 text-xs min-w-0"
+                onClick={() => setViewMode("calendar")}
+              >
+                <CalendarDays className="mr-1 h-3 w-3" />
+                Cal
+              </Button>
+              <Button
+                variant={viewMode === "timeline" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 flex-1 text-xs min-w-0"
+                onClick={() => setViewMode("timeline")}
+              >
+                <GanttChart className="mr-1 h-3 w-3" />
+                Gantt
               </Button>
             </div>
           )}

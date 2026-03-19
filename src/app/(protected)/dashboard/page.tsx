@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { TaskList } from "@/components/tasks/task-list";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { CalendarView } from "@/components/calendar/calendar-view";
+import { TimelineView } from "@/components/timeline/timeline-view";
 import { MyDayView } from "@/components/tasks/my-day-view";
 import { FilterBar } from "@/components/filters/filter-bar";
 import { useUIStore } from "@/stores/ui-store";
@@ -63,6 +65,10 @@ export default function DashboardPage() {
           <MyDayView />
         ) : viewMode === "kanban" ? (
           <KanbanBoard />
+        ) : viewMode === "calendar" ? (
+          <CalendarView />
+        ) : viewMode === "timeline" ? (
+          <TimelineView />
         ) : (
           <TaskList />
         )}

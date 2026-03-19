@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type ViewMode = "list" | "kanban" | "my-day";
+export type ViewMode = "list" | "kanban" | "calendar" | "timeline" | "my-day";
 
 interface UIStore {
   sidebarOpen: boolean;
