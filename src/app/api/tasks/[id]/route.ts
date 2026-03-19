@@ -1,156 +1,129 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser, unauthorized, notFound } from "@/lib/api-helpers";
+
+const taskInclude = {
+  assignee: { select: { id: true, name: true, email: true, image: true } },
+  creator: { select: { id: true, name: true, email: true, image: true } },
+  labels: { include: { label: true } },
+  subtasks: {
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      priority: true,
+      position: true,
+      dueDate: true,
+      startDate: true,
+      completedAt: true,
+      projectId: true,
+      sectionId: true,
+      assigneeId: true,
+      creatorId: true,
+      parentId: true,
+      isArchived: true,
+      createdAt: true,
+      updatedAt: true,
+      description: true,
+    },
+  },
+  blockedBy: {
+    include: {
+      blocking: { select: { id: true, title: true } },
+      blocked: { select: { id: true, title: true } },
+    },
+  },
+  blocks: {
+    include: {
+      blocking: { select: { id: true, title: true } },
+      blocked: { select: { id: true, title: true } },
+    },
+  },
+  section: { select: { id: true, name: true, color: true } },
+  project: { select: { id: true, name: true, color: true } },
+};
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const task = await prisma.task.findFirst({
-    where: { id: params.id, creatorId: user.id },
-    include: {
-      subtasks: {
-        include: {
-          labels: { include: { label: true } },
-          _count: { select: { subtasks: true, comments: true } },
-        },
-        orderBy: { position: "asc" },
-      },
-      labels: { include: { label: true } },
-      comments: {
-        include: { user: { select: { id: true, name: true, image: true } } },
-        orderBy: { createdAt: "desc" },
-      },
-      project: { select: { id: true, name: true, color: true } },
-      assignee: { select: { id: true, name: true, image: true } },
-      blockedBy: {
-        include: { blocking: { select: { id: true, title: true } } },
-      },
-      blocks: {
-        include: { blocked: { select: { id: true, title: true } } },
-      },
-      _count: { select: { subtasks: true, comments: true } },
-    },
+  const task = await prisma.task.findUnique({
+    where: { id: params.id },
+    include: taskInclude,
   });
 
-  if (!task) return notFound("Task not found");
-  return NextResponse.json(task);
+  if (!task) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ task });
 }
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
-
-  const existing = await prisma.task.findFirst({
-    where: { id: params.id, creatorId: user.id },
-  });
-  if (!existing) return notFound("Task not found");
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const body = await req.json();
-  const {
-    title,
-    description,
-    status,
-    priority,
-    dueDate,
-    position,
-    projectId,
-    parentId,
-    recurrence,
-    labels,
-    isArchived,
-  } = body;
+  const allowedFields = [
+    "title",
+    "description",
+    "status",
+    "priority",
+    "position",
+    "dueDate",
+    "startDate",
+    "sectionId",
+    "assigneeId",
+    "projectId",
+    "isArchived",
+  ];
 
-  // Build update data
   const data: Record<string, unknown> = {};
-  if (title !== undefined) data.title = title;
-  if (description !== undefined) data.description = description;
-  if (status !== undefined) {
-    data.status = status;
-    if (status === "DONE") data.completedAt = new Date();
-    else data.completedAt = null;
-  }
-  if (priority !== undefined) data.priority = priority;
-  if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null;
-  if (position !== undefined) data.position = position;
-  if (projectId !== undefined) data.projectId = projectId || null;
-  if (parentId !== undefined) data.parentId = parentId || null;
-  if (recurrence !== undefined) data.recurrence = recurrence;
-  if (isArchived !== undefined) data.isArchived = isArchived;
-
-  // Handle labels update
-  if (labels !== undefined) {
-    await prisma.taskLabel.deleteMany({ where: { taskId: params.id } });
-    if (labels.length > 0) {
-      await prisma.taskLabel.createMany({
-        data: labels.map((labelId: string) => ({
-          taskId: params.id,
-          labelId,
-        })),
-      });
+  for (const field of allowedFields) {
+    if (field in body) {
+      if ((field === "dueDate" || field === "startDate") && body[field]) {
+        data[field] = new Date(body[field]);
+      } else {
+        data[field] = body[field];
+      }
     }
+  }
+
+  if (body.status === "DONE" && !("completedAt" in body)) {
+    data.completedAt = new Date();
+  } else if (body.status && body.status !== "DONE") {
+    data.completedAt = null;
   }
 
   const task = await prisma.task.update({
     where: { id: params.id },
     data,
-    include: {
-      subtasks: {
-        include: {
-          labels: { include: { label: true } },
-          _count: { select: { subtasks: true, comments: true } },
-        },
-        orderBy: { position: "asc" },
-      },
-      labels: { include: { label: true } },
-      project: { select: { id: true, name: true, color: true } },
-      assignee: { select: { id: true, name: true, image: true } },
-      _count: { select: { subtasks: true, comments: true } },
-    },
+    include: taskInclude,
   });
 
-  // Log activity
-  try {
-    const workspace = await prisma.workspaceMember.findFirst({
-      where: { userId: user.id },
-    });
-    if (workspace) {
-      await prisma.activity.create({
-        data: {
-          type: status === "DONE" ? "TASK_COMPLETED" : "TASK_UPDATED",
-          userId: user.id,
-          workspaceId: workspace.workspaceId,
-          taskId: params.id,
-          meta: { changes: Object.keys(data) },
-        },
-      });
-    }
-  } catch {
-    /* activity logging is best-effort */
-  }
-
-  return NextResponse.json(task);
+  return NextResponse.json({ task });
 }
 
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
-
-  const existing = await prisma.task.findFirst({
-    where: { id: params.id, creatorId: user.id },
-  });
-  if (!existing) return notFound("Task not found");
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   await prisma.task.delete({ where: { id: params.id } });
-
   return NextResponse.json({ success: true });
 }
