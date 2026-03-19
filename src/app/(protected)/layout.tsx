@@ -1,4 +1,9 @@
-import { UserNav } from "@/components/user-nav";
+"use client";
+
+import { AppSidebar } from "@/components/sidebar/app-sidebar";
+import { TaskDetail } from "@/components/tasks/task-detail";
+import { PomodoroTimer } from "@/components/pomodoro/pomodoro-timer";
+import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 
 export default function ProtectedLayout({
   children,
@@ -6,14 +11,14 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <h1 className="text-lg font-semibold">KaryaDhara</h1>
-          <UserNav />
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-6">{children}</main>
+    <div className="flex h-[calc(100vh-57px)] overflow-hidden bg-background">
+      <AppSidebar />
+      <main className="flex-1 overflow-hidden flex">
+        <div className="flex-1 overflow-hidden">{children}</div>
+        <TaskDetail />
+      </main>
+      <PomodoroTimer />
+      <KeyboardShortcuts />
     </div>
   );
 }

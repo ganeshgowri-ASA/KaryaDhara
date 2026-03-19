@@ -4,6 +4,7 @@ import { AuthSessionProvider } from "@/components/providers/session-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CommandPalette } from "@/components/command-palette";
+import { UserNav } from "@/components/user-nav";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -41,7 +42,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="container flex h-14 items-center justify-between">
+              <div className="container flex h-14 items-center justify-between px-4">
                 <span className="text-lg font-bold tracking-tight">
                   KaryaDhara
                 </span>
@@ -50,6 +51,7 @@ export default function RootLayout({
                     <span className="text-xs">Ctrl</span>K
                   </kbd>
                   <ThemeToggle />
+                  <UserNav />
                 </div>
               </div>
             </header>
