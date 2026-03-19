@@ -1,199 +1,165 @@
+"use client";
+
 import { create } from "zustand";
-
-export type TaskPriority = "P1" | "P2" | "P3" | "P4";
-export type TaskStatus =
-  | "TODO"
-  | "IN_PROGRESS"
-  | "IN_REVIEW"
-  | "DONE"
-  | "CANCELLED"
-  | "ARCHIVED";
-
-export interface TaskLabel {
-  labelId: string;
-  label: {
-    id: string;
-    name: string;
-    color: string;
-  };
-}
 
 export interface Task {
   id: string;
   title: string;
-  description: string | null;
-  status: TaskStatus;
-  priority: TaskPriority;
+  description?: string | null;
+  status: string;
+  priority: string;
   position: number;
-  dueDate: string | null;
-  startDate: string | null;
-  completedAt: string | null;
-  recurrence: Record<string, unknown> | null;
-  projectId: string | null;
-  sectionId: string | null;
-  assigneeId: string | null;
+  dueDate?: string | null;
+  startDate?: string | null;
+  completedAt?: string | null;
+  recurrence?: RecurrenceData | null;
+  projectId?: string | null;
+  sectionId?: string | null;
+  assigneeId?: string | null;
   creatorId: string;
-  parentId: string | null;
+  parentId?: string | null;
   isArchived: boolean;
   metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   subtasks?: Task[];
-  labels?: TaskLabel[];
-  comments?: Comment[];
-  blockedBy?: { id: string; blockingId: string; blocking: { id: string; title: string } }[];
-  blocks?: { id: string; blockedId: string; blocked: { id: string; title: string } }[];
-  _count?: { subtasks: number; comments: number };
+  labels?: { label: { id: string; name: string; color: string } }[];
   project?: { id: string; name: string; color: string } | null;
   assignee?: { id: string; name: string | null; image: string | null } | null;
 }
 
-export interface Comment {
-  id: string;
-  taskId: string;
-  userId: string;
-  content: string;
-  isEdited: boolean;
-  createdAt: string;
-  updatedAt: string;
-  user?: { id: string; name: string | null; image: string | null };
+interface RecurrenceData {
+  type: string;
+  interval: number;
+  daysOfWeek?: number[];
+  dayOfMonth?: number;
+  endDate?: string;
+  skipDates?: string[];
 }
 
 interface TaskFilters {
-  status?: TaskStatus[];
-  priority?: TaskPriority[];
+  status?: string;
+  priority?: string;
   projectId?: string;
-  labelId?: string;
   assigneeId?: string;
+  labelId?: string;
+  search?: string;
   dueDateFrom?: string;
   dueDateTo?: string;
-  search?: string;
+  hasRecurrence?: boolean;
+}
+
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 interface TaskStore {
   tasks: Task[];
-  selectedTaskId: string | null;
+  selectedTask: Task | null;
   filters: TaskFilters;
-  sortBy: string;
-  sortOrder: "asc" | "desc";
+  pagination: Pagination;
   isLoading: boolean;
-  myDayTaskIds: string[];
+  error: string | null;
 
-  setTasks: (tasks: Task[]) => void;
+  setTasks: (tasks: Task[], pagination: Pagination) => void;
   addTask: (task: Task) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   removeTask: (id: string) => void;
-  setSelectedTaskId: (id: string | null) => void;
+  setSelectedTask: (task: Task | null) => void;
   setFilters: (filters: TaskFilters) => void;
-  setSortBy: (sortBy: string) => void;
-  setSortOrder: (order: "asc" | "desc") => void;
-  setIsLoading: (loading: boolean) => void;
-  toggleMyDayTask: (taskId: string) => void;
-  setMyDayTaskIds: (ids: string[]) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
 
-  fetchTasks: (projectId?: string) => Promise<void>;
+  fetchTasks: () => Promise<void>;
   createTask: (data: Partial<Task>) => Promise<Task | null>;
-  updateTaskApi: (id: string, data: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: [],
-  selectedTaskId: null,
+  selectedTask: null,
   filters: {},
-  sortBy: "position",
-  sortOrder: "asc",
+  pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
   isLoading: false,
-  myDayTaskIds: [],
+  error: null,
 
-  setTasks: (tasks) => set({ tasks }),
-  addTask: (task) => set((s) => ({ tasks: [...s.tasks, task] })),
+  setTasks: (tasks, pagination) => set({ tasks, pagination }),
+  addTask: (task) => set((s) => ({ tasks: [task, ...s.tasks] })),
   updateTask: (id, updates) =>
     set((s) => ({
       tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+      selectedTask:
+        s.selectedTask?.id === id
+          ? { ...s.selectedTask, ...updates }
+          : s.selectedTask,
     })),
   removeTask: (id) =>
-    set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),
-  setSelectedTaskId: (id) => set({ selectedTaskId: id }),
-  setFilters: (filters) => set({ filters }),
-  setSortBy: (sortBy) => set({ sortBy }),
-  setSortOrder: (order) => set({ sortOrder: order }),
-  setIsLoading: (loading) => set({ isLoading: loading }),
-  toggleMyDayTask: (taskId) =>
     set((s) => ({
-      myDayTaskIds: s.myDayTaskIds.includes(taskId)
-        ? s.myDayTaskIds.filter((id) => id !== taskId)
-        : [...s.myDayTaskIds, taskId],
+      tasks: s.tasks.filter((t) => t.id !== id),
+      selectedTask: s.selectedTask?.id === id ? null : s.selectedTask,
     })),
-  setMyDayTaskIds: (ids) => set({ myDayTaskIds: ids }),
+  setSelectedTask: (task) => set({ selectedTask: task }),
+  setFilters: (filters) => set({ filters }),
+  setLoading: (isLoading) => set({ isLoading }),
+  setError: (error) => set({ error }),
 
-  fetchTasks: async (projectId?: string) => {
-    set({ isLoading: true });
+  fetchTasks: async () => {
+    const { filters, pagination } = get();
+    set({ isLoading: true, error: null });
     try {
       const params = new URLSearchParams();
-      if (projectId) params.set("projectId", projectId);
-      const { filters } = get();
-      if (filters.status?.length)
-        params.set("status", filters.status.join(","));
-      if (filters.priority?.length)
-        params.set("priority", filters.priority.join(","));
-      if (filters.search) params.set("search", filters.search);
+      params.set("page", String(pagination.page));
+      params.set("limit", String(pagination.limit));
+      if (filters.status) params.set("status", filters.status);
+      if (filters.priority) params.set("priority", filters.priority);
+      if (filters.projectId) params.set("projectId", filters.projectId);
+      if (filters.assigneeId) params.set("assigneeId", filters.assigneeId);
       if (filters.labelId) params.set("labelId", filters.labelId);
+      if (filters.search) params.set("search", filters.search);
+      if (filters.dueDateFrom) params.set("dueDateFrom", filters.dueDateFrom);
+      if (filters.dueDateTo) params.set("dueDateTo", filters.dueDateTo);
 
-      const res = await fetch(`/api/tasks?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        set({ tasks: data });
-      }
+      const res = await fetch(`/api/tasks?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch tasks");
+      const json = await res.json();
+      set({ tasks: json.data, pagination: json.pagination });
+    } catch (e) {
+      set({ error: (e as Error).message });
     } finally {
       set({ isLoading: false });
     }
   },
 
   createTask: async (data) => {
+    set({ isLoading: true, error: null });
     try {
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (res.ok) {
-        const task = await res.json();
-        set((s) => ({ tasks: [task, ...s.tasks] }));
-        return task;
-      }
-    } catch {
-      /* ignore */
-    }
-    return null;
-  },
-
-  updateTaskApi: async (id, data) => {
-    try {
-      const res = await fetch(`/api/tasks/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (res.ok) {
-        const task = await res.json();
-        set((s) => ({
-          tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...task } : t)),
-        }));
-      }
-    } catch {
-      /* ignore */
+      if (!res.ok) throw new Error("Failed to create task");
+      const task = await res.json();
+      set((s) => ({ tasks: [task, ...s.tasks] }));
+      return task;
+    } catch (e) {
+      set({ error: (e as Error).message });
+      return null;
+    } finally {
+      set({ isLoading: false });
     }
   },
 
   deleteTask: async (id) => {
     try {
       const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
-      }
-    } catch {
-      /* ignore */
+      if (!res.ok) throw new Error("Failed to delete task");
+      get().removeTask(id);
+    } catch (e) {
+      set({ error: (e as Error).message });
     }
   },
 }));
