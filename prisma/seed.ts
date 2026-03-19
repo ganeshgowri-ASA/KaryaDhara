@@ -115,7 +115,37 @@ async function main() {
     },
   });
 
-  console.log(`  ✓ Project: ${project.name}`);
+  // ── Project: Design System ──────────────────────────────────
+  const project2 = await prisma.project.upsert({
+    where: { id: "proj-design-system" },
+    update: {},
+    create: {
+      id: "proj-design-system",
+      workspaceId: workspace.id,
+      name: "Design System",
+      description: "Component library and design tokens for KaryaDhara UI",
+      color: "#ec4899",
+      icon: "🎨",
+      position: 2,
+    },
+  });
+
+  // ── Project: API Integrations ──────────────────────────────
+  const project3 = await prisma.project.upsert({
+    where: { id: "proj-api-integrations" },
+    update: {},
+    create: {
+      id: "proj-api-integrations",
+      workspaceId: workspace.id,
+      name: "API Integrations",
+      description: "Third-party integrations - Slack, Google Calendar, GitHub",
+      color: "#f59e0b",
+      icon: "🔌",
+      position: 3,
+    },
+  });
+
+  console.log(`  ✓ Projects: ${project.name}, ${project2.name}, ${project3.name}`);
 
   // ── Sections ───────────────────────────────────────────────
   const sectionDefs = [
@@ -296,6 +326,118 @@ async function main() {
       dueDate: daysFromNow(25),
       labelNames: ["Docs"],
     },
+    {
+      id: "task-013",
+      title: "Add dark mode support to all components",
+      description: "Ensure every component respects the dark/light theme toggle using CSS variables.",
+      status: TaskStatus.IN_PROGRESS,
+      priority: TaskPriority.P2,
+      sectionId: sections["In Sprint"].id,
+      assigneeId: teamUser.id,
+      position: 4,
+      dueDate: daysFromNow(4),
+      labelNames: ["Frontend", "Design"],
+    },
+    {
+      id: "task-014",
+      title: "Implement command palette (Ctrl+K)",
+      description: "Build global command palette using cmdk library. Support quick task creation, navigation, and search.",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.P2,
+      sectionId: sections["Backlog"].id,
+      position: 7,
+      dueDate: daysFromNow(8),
+      labelNames: ["Frontend", "Feature"],
+    },
+    {
+      id: "task-015",
+      title: "Set up recurring task engine with rrule",
+      description: "Parse and generate recurring task instances from rrule patterns. Support daily, weekly, monthly, and custom recurrence.",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.P3,
+      sectionId: sections["Backlog"].id,
+      position: 8,
+      dueDate: daysFromNow(18),
+      labelNames: ["Backend", "Feature"],
+    },
+    {
+      id: "task-016",
+      title: "Natural language date parsing",
+      description: "Integrate chrono-node for parsing inputs like 'tomorrow 3pm' and 'next friday' into ISO dates.",
+      status: TaskStatus.DONE,
+      priority: TaskPriority.P2,
+      sectionId: sections["Done"].id,
+      position: 3,
+      dueDate: daysFromNow(-2),
+      completedAt: daysFromNow(-1),
+      labelNames: ["Frontend", "Feature"],
+    },
+    {
+      id: "task-017",
+      title: "Build My Day view",
+      description: "Create a daily focus view inspired by Microsoft To Do. Allow users to pick tasks for today with AI-suggested prioritization.",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.P2,
+      sectionId: sections["Backlog"].id,
+      position: 9,
+      dueDate: daysFromNow(14),
+      labelNames: ["Frontend", "Feature"],
+    },
+    {
+      id: "task-018",
+      title: "Add keyboard shortcuts (j/k/x/e/d/n)",
+      description: "Implement vim-style navigation and action shortcuts for power users.",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.P3,
+      sectionId: sections["Backlog"].id,
+      position: 10,
+      dueDate: daysFromNow(16),
+      labelNames: ["Frontend"],
+    },
+    {
+      id: "task-019",
+      title: "Fix mobile responsive layout",
+      description: "Sidebar should collapse to hamburger menu on mobile. Task cards need touch-friendly hit targets.",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.P3,
+      sectionId: sections["Backlog"].id,
+      position: 11,
+      dueDate: daysFromNow(20),
+      labelNames: ["Bug", "Frontend"],
+    },
+    {
+      id: "task-020",
+      title: "Implement task dependencies (blocked-by/blocks)",
+      description: "Allow linking tasks with dependency relationships. Prevent completing blocked tasks.",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.P3,
+      sectionId: sections["Backlog"].id,
+      position: 12,
+      dueDate: daysFromNow(22),
+      labelNames: ["Backend", "Feature"],
+    },
+    {
+      id: "task-021",
+      title: "Performance audit and optimization",
+      description: "Profile React renders, optimize Prisma queries, add proper indexes. Target < 200ms API response.",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.P4,
+      sectionId: sections["Backlog"].id,
+      position: 13,
+      dueDate: daysFromNow(28),
+      labelNames: ["Nice-to-have"],
+    },
+    {
+      id: "task-022",
+      title: "Add activity log to task detail panel",
+      description: "Show a timeline of all changes made to a task: status changes, assignee changes, comments, etc.",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.P3,
+      sectionId: sections["Backlog"].id,
+      position: 14,
+      dueDate: daysFromNow(17),
+      labelNames: ["Frontend", "Feature"],
+    },
   ];
 
   const createdTasks: Record<string, { id: string }> = {};
@@ -446,6 +588,28 @@ async function main() {
   });
 
   console.log("  ✓ Comments: 3 created");
+
+  // ── Task Dependencies ────────────────────────────────────────
+  const depDefs = [
+    { blockingId: "task-003", blockedId: "task-004" }, // Auth blocks Task API
+    { blockingId: "task-004", blockedId: "task-009" }, // Task API blocks Public API
+    { blockingId: "task-005", blockedId: "task-006" }, // List view blocks Kanban
+  ];
+
+  for (const dep of depDefs) {
+    await prisma.taskDependency.upsert({
+      where: {
+        blockingId_blockedId: {
+          blockingId: dep.blockingId,
+          blockedId: dep.blockedId,
+        },
+      },
+      update: {},
+      create: dep,
+    });
+  }
+
+  console.log(`  ✓ Dependencies: ${depDefs.length} created`);
 
   // ── Activity ───────────────────────────────────────────────
   await prisma.activity.createMany({
