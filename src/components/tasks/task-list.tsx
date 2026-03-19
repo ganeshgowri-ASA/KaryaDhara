@@ -35,7 +35,7 @@ export function TaskList() {
   }, []);
 
   useEffect(() => {
-    fetchTasks(activeProjectId || undefined);
+    fetchTasks();
   }, [activeProjectId, fetchTasks]);
 
   const sensors = useSensors(
@@ -52,8 +52,8 @@ export function TaskList() {
       const field = sortBy as SortField;
       switch (field) {
         case "priority": {
-          const pOrder = { P1: 1, P2: 2, P3: 3, P4: 4 };
-          cmp = pOrder[a.priority] - pOrder[b.priority];
+          const pOrder: Record<string, number> = { P1: 1, P2: 2, P3: 3, P4: 4 };
+          cmp = (pOrder[a.priority] ?? 5) - (pOrder[b.priority] ?? 5);
           break;
         }
         case "dueDate": {
@@ -66,7 +66,7 @@ export function TaskList() {
           cmp = a.title.localeCompare(b.title);
           break;
         case "status": {
-          const sOrder = {
+          const sOrder: Record<string, number> = {
             TODO: 1,
             IN_PROGRESS: 2,
             IN_REVIEW: 3,
@@ -74,7 +74,7 @@ export function TaskList() {
             CANCELLED: 5,
             ARCHIVED: 6,
           };
-          cmp = sOrder[a.status] - sOrder[b.status];
+          cmp = (sOrder[a.status] ?? 7) - (sOrder[b.status] ?? 7);
           break;
         }
         case "createdAt":

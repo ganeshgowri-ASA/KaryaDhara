@@ -20,10 +20,10 @@ export function StatusBadge({
   status,
   className,
 }: {
-  status: TaskStatus;
+  status: string;
   className?: string;
 }) {
-  const config = statusConfig[status];
+  const config = statusConfig[status as TaskStatus];
   const Icon = config.icon;
   return (
     <span
@@ -43,10 +43,10 @@ export function StatusIcon({
   status,
   className,
 }: {
-  status: TaskStatus;
+  status: string;
   className?: string;
 }) {
-  const config = statusConfig[status];
+  const config = statusConfig[status as TaskStatus];
   const Icon = config.icon;
   return <Icon className={cn("h-4 w-4", config.color, className)} />;
 }

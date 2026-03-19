@@ -14,13 +14,16 @@ export function FilterBar() {
   const { labels } = useProjectStore();
   const [open, setOpen] = useState(false);
 
+  const statusArr = Array.isArray(filters.status) ? filters.status : [];
+  const priorityArr = Array.isArray(filters.priority) ? filters.priority : [];
+
   const hasFilters =
-    (filters.status?.length || 0) > 0 ||
-    (filters.priority?.length || 0) > 0 ||
+    statusArr.length > 0 ||
+    priorityArr.length > 0 ||
     filters.labelId;
 
   const toggleStatus = (status: TaskStatus) => {
-    const current = filters.status || [];
+    const current = (Array.isArray(filters.status) ? filters.status : []) as TaskStatus[];
     const updated = current.includes(status)
       ? current.filter((s) => s !== status)
       : [...current, status];
@@ -28,7 +31,7 @@ export function FilterBar() {
   };
 
   const togglePriority = (priority: TaskPriority) => {
-    const current = filters.priority || [];
+    const current = (Array.isArray(filters.priority) ? filters.priority : []) as TaskPriority[];
     const updated = current.includes(priority)
       ? current.filter((p) => p !== priority)
       : [...current, priority];
@@ -69,8 +72,8 @@ export function FilterBar() {
             Filter
             {hasFilters && (
               <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
-                {(filters.status?.length || 0) +
-                  (filters.priority?.length || 0) +
+                {statusArr.length +
+                  priorityArr.length +
                   (filters.labelId ? 1 : 0)}
               </Badge>
             )}
@@ -88,7 +91,7 @@ export function FilterBar() {
                     onClick={() => toggleStatus(s.id)}
                     className={cn(
                       "rounded-md px-2 py-1 text-xs transition-colors",
-                      filters.status?.includes(s.id)
+                      statusArr.includes(s.id)
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted hover:bg-accent"
                     )}
@@ -109,7 +112,7 @@ export function FilterBar() {
                     onClick={() => togglePriority(p.id)}
                     className={cn(
                       "rounded-md px-2 py-1 text-xs transition-colors flex items-center gap-1",
-                      filters.priority?.includes(p.id)
+                      priorityArr.includes(p.id)
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted hover:bg-accent"
                     )}
@@ -165,7 +168,7 @@ export function FilterBar() {
       </Popover>
 
       {/* Active filter badges */}
-      {filters.status?.map((s) => (
+      {statusArr.map((s) => (
         <Badge key={s} variant="secondary" className="h-5 text-[10px]">
           {s.replace("_", " ")}
           <button onClick={() => toggleStatus(s)} className="ml-1">
@@ -173,7 +176,7 @@ export function FilterBar() {
           </button>
         </Badge>
       ))}
-      {filters.priority?.map((p) => (
+      {priorityArr.map((p) => (
         <Badge key={p} variant="secondary" className="h-5 text-[10px]">
           {p}
           <button onClick={() => togglePriority(p)} className="ml-1">

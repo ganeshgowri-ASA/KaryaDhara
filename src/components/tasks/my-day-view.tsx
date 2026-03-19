@@ -47,8 +47,8 @@ export function MyDayView() {
       )
       .sort((a, b) => {
         // P1/P2 first
-        const pOrder = { P1: 1, P2: 2, P3: 3, P4: 4 };
-        const pDiff = pOrder[a.priority] - pOrder[b.priority];
+        const pOrder: Record<string, number> = { P1: 1, URGENT: 1, P2: 2, HIGH: 2, P3: 3, MEDIUM: 3, P4: 4, LOW: 4, NONE: 5 };
+        const pDiff = (pOrder[a.priority] ?? 5) - (pOrder[b.priority] ?? 5);
         if (pDiff !== 0) return pDiff;
         // Then by due date
         const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
