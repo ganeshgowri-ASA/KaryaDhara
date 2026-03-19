@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession, errorResponse } from "@/lib/api-helpers";
-
-const updateLabelSchema = z.object({
-  name: z.string().min(1).max(50).optional(),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
-});
 
 export async function PATCH(
   request: NextRequest,
@@ -19,20 +13,15 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const data = updateLabelSchema.parse(body);
 
-    const label = await prisma.label.update({
-      where: { id },
-      data,
-      include: { _count: { select: { tasks: true } } },
+    const notification = await prisma.notification.update({
+      where: { id, userId: session.user.id },
+      data: { isRead: body.isRead ?? true },
     });
 
-    return NextResponse.json(label);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return errorResponse(error.issues[0].message, 400);
-    }
-    return errorResponse("Failed to update label", 500);
+    return NextResponse.json(notification);
+  } catch {
+    return errorResponse("Failed to update notification", 500);
   }
 }
 
@@ -46,9 +35,11 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    await prisma.label.delete({ where: { id } });
+    await prisma.notification.delete({
+      where: { id, userId: session.user.id },
+    });
     return NextResponse.json({ success: true });
   } catch {
-    return errorResponse("Failed to delete label", 500);
+    return errorResponse("Failed to delete notification", 500);
   }
 }
