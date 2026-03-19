@@ -1,59 +1,83 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
-  getSessionUser,
-  unauthorized,
-  badRequest,
-  getOrCreateWorkspace,
-} from "@/lib/api-helpers";
+  requireAuth,
+  errorResponse,
+  jsonResponse,
+  parsePagination,
+  paginatedResponse,
+} from "@/lib/api-utils";
 
-export async function GET() {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+export async function GET(req: NextRequest) {
+  const session = await requireAuth();
+  if (!session) return errorResponse("Unauthorized", 401);
 
-  const workspace = await getOrCreateWorkspace(user.id);
+  const { searchParams } = req.nextUrl;
+  const { page, limit, skip } = parsePagination(searchParams);
+  const status = searchParams.get("status");
+  const workspaceId = searchParams.get("workspaceId");
 
-  const projects = await prisma.project.findMany({
-    where: { workspaceId: workspace.id, status: "ACTIVE" },
-    include: {
-      _count: { select: { tasks: true } },
-      sections: { orderBy: { position: "asc" } },
-    },
-    orderBy: { position: "asc" },
-  });
+  const where: Record<string, unknown> = {};
+  if (status) where.status = status;
+  if (workspaceId) where.workspaceId = workspaceId;
 
-  return NextResponse.json(projects);
+  const [projects, total] = await Promise.all([
+    prisma.project.findMany({
+      where,
+      include: {
+        _count: { select: { tasks: true, sections: true } },
+        sections: {
+          select: { id: true, name: true, position: true },
+          orderBy: { position: "asc" },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.project.count({ where }),
+  ]);
+
+  return paginatedResponse(projects, total, page, limit);
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+  const session = await requireAuth();
+  if (!session) return errorResponse("Unauthorized", 401);
 
-  const body = await req.json();
-  const { name, description, color, icon } = body;
+  try {
+    const body = await req.json();
+    const {
+      name,
+      description,
+      color,
+      icon,
+      workspaceId,
+      startDate,
+      endDate,
+    } = body;
 
-  if (!name?.trim()) return badRequest("Name is required");
+    if (!name?.trim()) return errorResponse("Name is required");
+    if (!workspaceId) return errorResponse("workspaceId is required");
 
-  const workspace = await getOrCreateWorkspace(user.id);
+    const project = await prisma.project.create({
+      data: {
+        name: name.trim(),
+        description,
+        color: color || "#6366f1",
+        icon,
+        workspaceId,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+      },
+      include: {
+        _count: { select: { tasks: true, sections: true } },
+      },
+    });
 
-  const maxPosition = await prisma.project.aggregate({
-    where: { workspaceId: workspace.id },
-    _max: { position: true },
-  });
-
-  const project = await prisma.project.create({
-    data: {
-      name: name.trim(),
-      description: description || null,
-      color: color || "#6366f1",
-      icon: icon || null,
-      position: (maxPosition._max.position ?? 0) + 1,
-      workspaceId: workspace.id,
-    },
-    include: {
-      _count: { select: { tasks: true } },
-    },
-  });
-
-  return NextResponse.json(project, { status: 201 });
+    return jsonResponse(project, 201);
+  } catch (error) {
+    console.error("Create project error:", error);
+    return errorResponse("Failed to create project", 500);
+  }
 }

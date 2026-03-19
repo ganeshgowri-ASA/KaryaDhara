@@ -1,42 +1,49 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser, unauthorized, notFound } from "@/lib/api-helpers";
+import { requireAuth, errorResponse, jsonResponse } from "@/lib/api-utils";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+  const session = await requireAuth();
+  if (!session) return errorResponse("Unauthorized", 401);
 
-  const existing = await prisma.label.findFirst({ where: { id: params.id } });
-  if (!existing) return notFound("Label not found");
-
-  const body = await req.json();
-  const { name, color } = body;
-
-  const data: Record<string, unknown> = {};
-  if (name !== undefined) data.name = name;
-  if (color !== undefined) data.color = color;
-
-  const label = await prisma.label.update({
+  const existing = await prisma.label.findUnique({
     where: { id: params.id },
-    data,
   });
+  if (!existing) return errorResponse("Label not found", 404);
 
-  return NextResponse.json(label);
+  try {
+    const { name, color } = await req.json();
+    const data: Record<string, unknown> = {};
+    if (name !== undefined) data.name = name.trim();
+    if (color !== undefined) data.color = color;
+
+    const label = await prisma.label.update({
+      where: { id: params.id },
+      data,
+      include: { _count: { select: { tasks: true } } },
+    });
+
+    return jsonResponse(label);
+  } catch {
+    return errorResponse("Label name conflict", 409);
+  }
 }
 
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+  const session = await requireAuth();
+  if (!session) return errorResponse("Unauthorized", 401);
 
-  const existing = await prisma.label.findFirst({ where: { id: params.id } });
-  if (!existing) return notFound("Label not found");
+  const existing = await prisma.label.findUnique({
+    where: { id: params.id },
+  });
+  if (!existing) return errorResponse("Label not found", 404);
 
   await prisma.label.delete({ where: { id: params.id } });
-  return NextResponse.json({ success: true });
+  return jsonResponse({ success: true });
 }
