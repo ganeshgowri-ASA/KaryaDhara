@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
   if (!user) return unauthorized();
 
   const body = await req.json();
-  const { title, description, status, priority, dueDate, projectId, parentId, labels, recurrence } =
+  const { title, description, status, priority, dueDate, startDate, projectId, sectionId, assigneeId, parentId, labels, recurrence } =
     body;
 
   if (!title?.trim()) return badRequest("Title is required");
@@ -106,7 +106,10 @@ export async function POST(req: NextRequest) {
       priority: priority || "P3",
       position: (maxPosition._max.position ?? 0) + 1,
       dueDate: dueDate ? new Date(dueDate) : null,
+      startDate: startDate ? new Date(startDate) : null,
       projectId: projectId || null,
+      sectionId: sectionId || null,
+      assigneeId: assigneeId || null,
       parentId: parentId || null,
       creatorId: user.id,
       recurrence: recurrence || null,

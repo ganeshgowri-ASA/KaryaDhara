@@ -59,8 +59,11 @@ export async function PATCH(
     status,
     priority,
     dueDate,
+    startDate,
     position,
     projectId,
+    sectionId,
+    assigneeId,
     parentId,
     recurrence,
     labels,
@@ -78,8 +81,11 @@ export async function PATCH(
   }
   if (priority !== undefined) data.priority = priority;
   if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null;
+  if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
   if (position !== undefined) data.position = position;
   if (projectId !== undefined) data.projectId = projectId || null;
+  if (sectionId !== undefined) data.sectionId = sectionId || null;
+  if (assigneeId !== undefined) data.assigneeId = assigneeId || null;
   if (parentId !== undefined) data.parentId = parentId || null;
   if (recurrence !== undefined) data.recurrence = recurrence;
   if (isArchived !== undefined) data.isArchived = isArchived;
@@ -151,6 +157,5 @@ export async function DELETE(
   if (!existing) return notFound("Task not found");
 
   await prisma.task.delete({ where: { id: params.id } });
-
   return NextResponse.json({ success: true });
 }
