@@ -5,7 +5,8 @@ import { Filter, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useTaskStore, type TaskPriority, type TaskStatus } from "@/stores/task-store";
+import { useTaskStore } from "@/stores/task-store";
+import type { TaskPriority, TaskStatus } from "@prisma/client";
 import { useProjectStore } from "@/stores/project-store";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -168,7 +169,7 @@ export function FilterBar() {
       {filters.status?.map((s) => (
         <Badge key={s} variant="secondary" className="h-5 text-[10px]">
           {s.replace("_", " ")}
-          <button onClick={() => toggleStatus(s)} className="ml-1">
+          <button onClick={() => toggleStatus(s as TaskStatus)} className="ml-1">
             <X className="h-2.5 w-2.5" />
           </button>
         </Badge>
@@ -176,7 +177,7 @@ export function FilterBar() {
       {filters.priority?.map((p) => (
         <Badge key={p} variant="secondary" className="h-5 text-[10px]">
           {p}
-          <button onClick={() => togglePriority(p)} className="ml-1">
+          <button onClick={() => togglePriority(p as TaskPriority)} className="ml-1">
             <X className="h-2.5 w-2.5" />
           </button>
         </Badge>

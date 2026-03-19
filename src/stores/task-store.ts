@@ -25,7 +25,13 @@ export interface Task {
   subtasks?: Task[];
   labels?: { label: { id: string; name: string; color: string } }[];
   project?: { id: string; name: string; color: string } | null;
-  assignee?: { id: string; name: string | null; image: string | null } | null;
+  assignee?: { id: string; name: string | null; email?: string | null; image: string | null } | null;
+  creator?: { id: string; name: string | null; email?: string | null; image: string | null } | null;
+  section?: { id: string; name: string } | null;
+  _count?: { subtasks?: number; comments?: number };
+  blockedBy?: Task[];
+  blocks?: Task[];
+  comments?: { id: string; content: string; userId: string; isEdited?: boolean; createdAt: string; user?: { id: string; name: string | null; image: string | null } }[];
 }
 
 interface RecurrenceData {
@@ -38,8 +44,8 @@ interface RecurrenceData {
 }
 
 interface TaskFilters {
-  status?: string;
-  priority?: string;
+  status?: string[];
+  priority?: string[];
   projectId?: string;
   assigneeId?: string;
   labelId?: string;
@@ -68,19 +74,26 @@ interface TaskStore {
   addTask: (task: Task) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   removeTask: (id: string) => void;
+  selectedTaskId: string | null;
   setSelectedTask: (task: Task | null) => void;
+  setSelectedTaskId: (id: string | null) => void;
   setFilters: (filters: TaskFilters) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 
-  fetchTasks: () => Promise<void>;
+  myDayTaskIds: string[];
+  toggleMyDayTask: (taskId: string) => void;
+
+  fetchTasks: (projectId?: string) => Promise<void>;
   createTask: (data: Partial<Task>) => Promise<Task | null>;
+  updateTaskApi: (id: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: [],
   selectedTask: null,
+  selectedTaskId: null,
   filters: {},
   pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
   isLoading: false,
@@ -101,20 +114,32 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       tasks: s.tasks.filter((t) => t.id !== id),
       selectedTask: s.selectedTask?.id === id ? null : s.selectedTask,
     })),
-  setSelectedTask: (task) => set({ selectedTask: task }),
+  setSelectedTask: (task) => set({ selectedTask: task, selectedTaskId: task?.id ?? null }),
+  setSelectedTaskId: (id) => {
+    const task = id ? get().tasks.find((t) => t.id === id) ?? null : null;
+    set({ selectedTaskId: id, selectedTask: task });
+  },
   setFilters: (filters) => set({ filters }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
+  myDayTaskIds: [],
+  toggleMyDayTask: (taskId) =>
+    set((s) => ({
+      myDayTaskIds: s.myDayTaskIds.includes(taskId)
+        ? s.myDayTaskIds.filter((id) => id !== taskId)
+        : [...s.myDayTaskIds, taskId],
+    })),
 
-  fetchTasks: async () => {
+  fetchTasks: async (projectId?: string) => {
     const { filters, pagination } = get();
     set({ isLoading: true, error: null });
     try {
       const params = new URLSearchParams();
       params.set("page", String(pagination.page));
       params.set("limit", String(pagination.limit));
-      if (filters.status) params.set("status", filters.status);
-      if (filters.priority) params.set("priority", filters.priority);
+      if (projectId) params.set("projectId", projectId);
+      if (filters.status?.length) params.set("status", filters.status.join(","));
+      if (filters.priority?.length) params.set("priority", filters.priority.join(","));
       if (filters.projectId) params.set("projectId", filters.projectId);
       if (filters.assigneeId) params.set("assigneeId", filters.assigneeId);
       if (filters.labelId) params.set("labelId", filters.labelId);
@@ -150,6 +175,23 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       return null;
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  updateTaskApi: async (id, updates) => {
+    get().updateTask(id, updates);
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Failed to update task");
+      const json = await res.json();
+      get().updateTask(id, json.task ?? json);
+    } catch (e) {
+      set({ error: (e as Error).message });
+      get().fetchTasks();
     }
   },
 

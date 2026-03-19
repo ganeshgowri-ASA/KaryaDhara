@@ -16,7 +16,8 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useTaskStore, type Task, type TaskStatus } from "@/stores/task-store";
+import { useTaskStore, type Task } from "@/stores/task-store";
+import type { TaskStatus } from "@prisma/client";
 import { useProjectStore } from "@/stores/project-store";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";

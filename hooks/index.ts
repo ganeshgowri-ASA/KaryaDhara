@@ -16,7 +16,7 @@ export function useTasks() {
       const res = await fetch(`/api/tasks?${TASK_INCLUDE}`);
       if (!res.ok) throw new Error("Failed to fetch tasks");
       const data = await res.json();
-      setTasks(data.tasks);
+      setTasks(data.tasks, data.pagination ?? { page: 1, pageSize: 50, total: data.tasks.length, totalPages: 1 });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {

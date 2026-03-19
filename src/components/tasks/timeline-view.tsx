@@ -93,7 +93,7 @@ export function TimelineView({
     const lines: { from: Task; to: Task; fromIdx: number; toIdx: number }[] = [];
     timelineTasks.forEach((task, idx) => {
       task.blocks?.forEach((dep) => {
-        const blockedIdx = timelineTasks.findIndex((t) => t.id === dep.blockedId);
+        const blockedIdx = timelineTasks.findIndex((t) => t.id === dep.id);
         if (blockedIdx >= 0) {
           lines.push({
             from: task,

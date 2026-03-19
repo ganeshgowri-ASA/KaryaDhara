@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { TaskPriority } from "@/stores/task-store";
+import type { TaskPriority } from "@prisma/client";
 
 const priorityConfig: Record<
   TaskPriority,
@@ -17,10 +17,10 @@ export function PriorityBadge({
   priority,
   className,
 }: {
-  priority: TaskPriority;
+  priority: string;
   className?: string;
 }) {
-  const config = priorityConfig[priority];
+  const config = priorityConfig[priority as TaskPriority] ?? priorityConfig.P4;
   return (
     <span
       className={cn(
@@ -35,12 +35,12 @@ export function PriorityBadge({
   );
 }
 
-export function PriorityDot({ priority }: { priority: TaskPriority }) {
-  const colors: Record<TaskPriority, string> = {
+export function PriorityDot({ priority }: { priority: string }) {
+  const colors: Record<string, string> = {
     P1: "bg-red-500",
     P2: "bg-orange-500",
     P3: "bg-blue-500",
     P4: "bg-gray-400",
   };
-  return <span className={cn("inline-block h-2 w-2 rounded-full", colors[priority])} />;
+  return <span className={cn("inline-block h-2 w-2 rounded-full", colors[priority] ?? "bg-gray-400")} />;
 }

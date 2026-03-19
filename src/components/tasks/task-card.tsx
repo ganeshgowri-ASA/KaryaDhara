@@ -125,7 +125,7 @@ export function TaskCard({
 
         {task.labels?.map((tl) => (
           <Badge
-            key={tl.labelId}
+            key={tl.label.id}
             className="text-[10px] px-1.5 py-0"
             style={{ backgroundColor: tl.label.color, color: "#fff" }}
           >

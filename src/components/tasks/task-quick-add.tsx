@@ -4,7 +4,8 @@ import { useState, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useTaskStore, type TaskPriority } from "@/stores/task-store";
+import { useTaskStore } from "@/stores/task-store";
+import type { TaskPriority } from "@prisma/client";
 import { useProjectStore } from "@/stores/project-store";
 import { extractDateAndTitle } from "@/lib/date-parser";
 

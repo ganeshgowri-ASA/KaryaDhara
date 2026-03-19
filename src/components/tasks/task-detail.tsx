@@ -22,11 +22,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { PriorityBadge } from "./priority-badge";
 import { StatusBadge } from "./status-badge";
-import {
-  useTaskStore,
-  type TaskPriority,
-  type TaskStatus,
-} from "@/stores/task-store";
+import { useTaskStore } from "@/stores/task-store";
+import type { TaskPriority, TaskStatus } from "@prisma/client";
 import { useProjectStore } from "@/stores/project-store";
 import { useUIStore } from "@/stores/ui-store";
 import { Progress } from "@/components/ui/progress";
@@ -335,12 +332,12 @@ export function TaskDetail() {
               </label>
               {task.blockedBy?.map((dep) => (
                 <div key={dep.id} className="text-sm text-muted-foreground py-0.5">
-                  Blocked by: {dep.blocking.title}
+                  Blocked by: {dep.title}
                 </div>
               ))}
               {task.blocks?.map((dep) => (
                 <div key={dep.id} className="text-sm text-muted-foreground py-0.5">
-                  Blocks: {dep.blocked.title}
+                  Blocks: {dep.title}
                 </div>
               ))}
             </div>
@@ -354,7 +351,7 @@ export function TaskDetail() {
                 Recurrence
               </label>
               <p className="text-sm">
-                {(task.recurrence as Record<string, string>).type || "Custom"}
+                {(task.recurrence as unknown as Record<string, string>)?.type || "Custom"}
               </p>
             </div>
           )}
