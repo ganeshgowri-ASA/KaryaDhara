@@ -14,6 +14,13 @@ datasource db {
 // AUTH (NextAuth.js)
 // ─────────────────────────────────────────────
 
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -21,6 +28,8 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String?
+  password      String?
+  role          Role      @default(MEMBER)
   timezone      String    @default("UTC")
   preferences   Json      @default("{}")
   createdAt     DateTime  @default(now())
