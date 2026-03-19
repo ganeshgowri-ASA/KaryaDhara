@@ -2,12 +2,15 @@
 
 import { create } from "zustand";
 
+export type TaskStatus = "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE" | "CANCELLED" | "ARCHIVED";
+export type TaskPriority = "P1" | "P2" | "P3" | "P4";
+
 export interface Task {
   id: string;
   title: string;
   description?: string | null;
-  status: string;
-  priority: string;
+  status: TaskStatus;
+  priority: TaskPriority;
   position: number;
   dueDate?: string | null;
   startDate?: string | null;
@@ -26,6 +29,12 @@ export interface Task {
   labels?: { label: { id: string; name: string; color: string } }[];
   project?: { id: string; name: string; color: string } | null;
   assignee?: { id: string; name: string | null; image: string | null } | null;
+  creator?: { id: string; name: string | null; image: string | null } | null;
+  section?: { id: string; name: string } | null;
+  blockedBy?: { id: string; blocking: { id: string; title: string; status: string } }[];
+  blocks?: { id: string; blocked: { id: string; title: string; status: string } }[];
+  comments?: { id: string; content: string; userId: string; user?: { id: string; name: string | null; image: string | null }; createdAt: string; isEdited?: boolean }[];
+  _count?: { subtasks?: number; comments?: number };
 }
 
 interface RecurrenceData {
@@ -38,8 +47,8 @@ interface RecurrenceData {
 }
 
 interface TaskFilters {
-  status?: string;
-  priority?: string;
+  status?: TaskStatus[];
+  priority?: TaskPriority[];
   projectId?: string;
   assigneeId?: string;
   labelId?: string;
@@ -59,6 +68,7 @@ interface Pagination {
 interface TaskStore {
   tasks: Task[];
   selectedTask: Task | null;
+  selectedTaskId: string | null;
   filters: TaskFilters;
   pagination: Pagination;
   isLoading: boolean;
@@ -67,11 +77,16 @@ interface TaskStore {
   setTasks: (tasks: Task[], pagination: Pagination) => void;
   addTask: (task: Task) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
+  updateTaskApi: (id: string, updates: Partial<Task>) => Promise<void>;
   removeTask: (id: string) => void;
   setSelectedTask: (task: Task | null) => void;
+  setSelectedTaskId: (id: string | null) => void;
   setFilters: (filters: TaskFilters) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+
+  myDayTaskIds: string[];
+  toggleMyDayTask: (id: string) => void;
 
   fetchTasks: () => Promise<void>;
   createTask: (data: Partial<Task>) => Promise<Task | null>;
@@ -81,6 +96,7 @@ interface TaskStore {
 export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: [],
   selectedTask: null,
+  selectedTaskId: null,
   filters: {},
   pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
   isLoading: false,
@@ -101,7 +117,31 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       tasks: s.tasks.filter((t) => t.id !== id),
       selectedTask: s.selectedTask?.id === id ? null : s.selectedTask,
     })),
-  setSelectedTask: (task) => set({ selectedTask: task }),
+  setSelectedTask: (task) => set({ selectedTask: task, selectedTaskId: task?.id ?? null }),
+  setSelectedTaskId: (id) => set((s) => ({
+    selectedTaskId: id,
+    selectedTask: id ? s.tasks.find((t) => t.id === id) ?? null : null,
+  })),
+  updateTaskApi: async (id, updates) => {
+    get().updateTask(id, updates);
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Failed to update task");
+    } catch (e) {
+      set({ error: (e as Error).message });
+      get().fetchTasks();
+    }
+  },
+  myDayTaskIds: [],
+  toggleMyDayTask: (id) => set((s) => ({
+    myDayTaskIds: s.myDayTaskIds.includes(id)
+      ? s.myDayTaskIds.filter((tid) => tid !== id)
+      : [...s.myDayTaskIds, id],
+  })),
   setFilters: (filters) => set({ filters }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
@@ -113,8 +153,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       const params = new URLSearchParams();
       params.set("page", String(pagination.page));
       params.set("limit", String(pagination.limit));
-      if (filters.status) params.set("status", filters.status);
-      if (filters.priority) params.set("priority", filters.priority);
+      if (filters.status?.length) params.set("status", filters.status.join(","));
+      if (filters.priority?.length) params.set("priority", filters.priority.join(","));
       if (filters.projectId) params.set("projectId", filters.projectId);
       if (filters.assigneeId) params.set("assigneeId", filters.assigneeId);
       if (filters.labelId) params.set("labelId", filters.labelId);

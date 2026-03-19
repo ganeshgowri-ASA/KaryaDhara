@@ -42,3 +42,20 @@ export async function getAuthSession() {
   if (!session?.user?.id) return null;
   return session;
 }
+
+export async function getSessionUser() {
+  const session = await getAuthSession();
+  return session?.user ?? null;
+}
+
+export function unauthorized() {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+}
+
+export function notFound(message = "Not found") {
+  return NextResponse.json({ error: message }, { status: 404 });
+}
+
+export function badRequest(message = "Bad request") {
+  return NextResponse.json({ error: message }, { status: 400 });
+}

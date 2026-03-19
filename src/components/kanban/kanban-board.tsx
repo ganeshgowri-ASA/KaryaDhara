@@ -29,7 +29,7 @@ const DEFAULT_COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
 ];
 
 export function KanbanBoard() {
-  const { tasks, fetchTasks, updateTaskApi, isLoading } = useTaskStore();
+  const { tasks, fetchTasks, updateTask, isLoading } = useTaskStore();
   const { activeProjectId } = useProjectStore();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -39,7 +39,7 @@ export function KanbanBoard() {
   }, []);
 
   useEffect(() => {
-    fetchTasks(activeProjectId || undefined);
+    fetchTasks();
   }, [activeProjectId, fetchTasks]);
 
   const sensors = useSensors(
@@ -73,14 +73,14 @@ export function KanbanBoard() {
     // Check if dropped on a column
     const targetColumn = DEFAULT_COLUMNS.find((c) => c.id === overId);
     if (targetColumn) {
-      updateTaskApi(taskId, { status: targetColumn.id });
+      updateTask(taskId, { status: targetColumn.id });
       return;
     }
 
     // Dropped on another task - find which column it's in
     const targetTask = tasks.find((t) => t.id === overId);
     if (targetTask && targetTask.status) {
-      updateTaskApi(taskId, {
+      updateTask(taskId, {
         status: targetTask.status,
         position: targetTask.position,
       });

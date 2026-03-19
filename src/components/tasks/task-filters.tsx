@@ -16,7 +16,8 @@ export function TaskFilters() {
   const { filters, setFilters, fetchTasks } = useTaskStore();
 
   const handleFilterChange = (key: string, value: string) => {
-    const newFilters = { ...filters, [key]: value === "all" ? undefined : value };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newFilters = { ...filters, [key]: value === "all" ? undefined : value } as Parameters<typeof setFilters>[0];
     setFilters(newFilters);
     setTimeout(fetchTasks, 0);
   };
@@ -41,7 +42,7 @@ export function TaskFilters() {
       </div>
 
       <Select
-        value={filters.status || "all"}
+        value={(Array.isArray(filters.status) ? filters.status[0] : filters.status) || "all"}
         onValueChange={(v) => handleFilterChange("status", v)}
       >
         <SelectTrigger className="w-[140px]">
@@ -58,7 +59,7 @@ export function TaskFilters() {
       </Select>
 
       <Select
-        value={filters.priority || "all"}
+        value={(Array.isArray(filters.priority) ? filters.priority[0] : filters.priority) || "all"}
         onValueChange={(v) => handleFilterChange("priority", v)}
       >
         <SelectTrigger className="w-[140px]">
