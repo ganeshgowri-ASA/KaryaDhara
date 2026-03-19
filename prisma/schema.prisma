@@ -48,6 +48,7 @@ model User {
   activities      Activity[]
   timers          Timer[]
   apiKeys         ApiKey[]
+  notifications   Notification[]
 
   @@index([email])
 }
@@ -256,8 +257,9 @@ model Task {
   timers     Timer[]
 
   // Dependencies
-  blockedBy TaskDependency[] @relation("Blocking")
-  blocks    TaskDependency[] @relation("Blocked")
+  blockedBy     TaskDependency[] @relation("Blocking")
+  blocks        TaskDependency[] @relation("Blocked")
+  notifications Notification[]
 
   @@index([projectId])
   @@index([sectionId])
@@ -420,6 +422,38 @@ model Timer {
   @@index([taskId])
   @@index([userId])
   @@index([userId, status])
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICATION
+// ─────────────────────────────────────────────
+
+enum NotificationType {
+  DUE_REMINDER
+  OVERDUE_ALERT
+  TASK_ASSIGNED
+  TASK_COMPLETED
+  COMMENT_ADDED
+  STATUS_CHANGED
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  taskId    String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
 }
 
 // ─────────────────────────────────────────────

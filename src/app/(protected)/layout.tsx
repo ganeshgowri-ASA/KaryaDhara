@@ -4,6 +4,8 @@ import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { TaskDetail } from "@/components/tasks/task-detail";
 import { PomodoroTimer } from "@/components/pomodoro/pomodoro-timer";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { SearchDialog } from "@/components/search/search-dialog";
+import { NotificationCenter } from "@/components/notifications/notification-center";
 
 export default function ProtectedLayout({
   children,
@@ -19,6 +21,7 @@ export default function ProtectedLayout({
       </main>
       <PomodoroTimer />
       <KeyboardShortcuts />
+      <SearchDialog />
     </div>
   );
 }
