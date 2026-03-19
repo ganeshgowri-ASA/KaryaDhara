@@ -105,3 +105,23 @@ export const STATUS_COLORS: Record<TaskStatus, string> = {
 };
 
 export const KANBAN_COLUMNS: TaskStatus[] = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
+
+// ─── S2.3 Auth Type Augmentation ──────────────────────
+import { Role } from "@prisma/client";
+import "next-auth";
+
+declare module "next-auth" {
+  interface User {
+    id: string;
+    role: Role;
+    timezone: string;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: Role;
+    timezone: string;
+  }
+}

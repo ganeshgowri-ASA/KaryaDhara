@@ -1,129 +1,213 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
-  getSessionUser,
-  unauthorized,
-  badRequest,
-  getOrCreateWorkspace,
+  getAuthSession,
+  parsePagination,
+  paginatedResponse,
+  errorResponse,
 } from "@/lib/api-helpers";
-import { Prisma } from "@prisma/client";
+import { suggestPriority, suggestSubtasks } from "@/lib/smart-suggestions";
+import { isValidRecurrence } from "@/lib/recurrence";
+import { Prisma, TaskPriority, TaskStatus } from "@prisma/client";
 
-export async function GET(req: NextRequest) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+const createTaskSchema = z.object({
+  title: z.string().min(1).max(500),
+  description: z.string().max(5000).optional(),
+  status: z.nativeEnum(TaskStatus).optional(),
+  priority: z.nativeEnum(TaskPriority).optional(),
+  dueDate: z.string().datetime().optional(),
+  startDate: z.string().datetime().optional(),
+  projectId: z.string().optional(),
+  sectionId: z.string().optional(),
+  assigneeId: z.string().optional(),
+  parentId: z.string().optional(),
+  recurrence: z.any().optional(),
+  labelIds: z.array(z.string()).optional(),
+  autoSuggestSubtasks: z.boolean().optional(),
+  autoSuggestPriority: z.boolean().optional(),
+});
 
-  const { searchParams } = req.nextUrl;
-  const projectId = searchParams.get("projectId");
-  const status = searchParams.get("status");
-  const priority = searchParams.get("priority");
-  const search = searchParams.get("search");
-  const labelId = searchParams.get("labelId");
-  const parentId = searchParams.get("parentId");
+export async function GET(request: NextRequest) {
+  const session = await getAuthSession();
+  if (!session) return errorResponse("Unauthorized", 401);
+
+  const url = new URL(request.url);
+  const pagination = parsePagination(url);
 
   const where: Prisma.TaskWhereInput = {
-    creatorId: user.id,
+    creatorId: session.user.id,
     isArchived: false,
-    parentId: parentId || null,
   };
 
+  const status = url.searchParams.get("status");
+  if (status) where.status = status as TaskStatus;
+
+  const priority = url.searchParams.get("priority");
+  if (priority) where.priority = priority as TaskPriority;
+
+  const projectId = url.searchParams.get("projectId");
   if (projectId) where.projectId = projectId;
-  if (status) {
-    const statuses = status.split(",");
-    where.status = { in: statuses as Prisma.EnumTaskStatusFilter["in"] };
-  }
-  if (priority) {
-    const priorities = priority.split(",");
-    where.priority = {
-      in: priorities as Prisma.EnumTaskPriorityFilter["in"],
-    };
-  }
-  if (search) {
-    where.title = { contains: search, mode: "insensitive" };
-  }
+
+  const assigneeId = url.searchParams.get("assigneeId");
+  if (assigneeId) where.assigneeId = assigneeId;
+
+  const labelId = url.searchParams.get("labelId");
   if (labelId) {
     where.labels = { some: { labelId } };
   }
 
-  const tasks = await prisma.task.findMany({
-    where,
-    include: {
-      subtasks: {
+  const search = url.searchParams.get("search");
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: "insensitive" } },
+      { description: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const dueDateFrom = url.searchParams.get("dueDateFrom");
+  const dueDateTo = url.searchParams.get("dueDateTo");
+  if (dueDateFrom || dueDateTo) {
+    where.dueDate = {};
+    if (dueDateFrom) where.dueDate.gte = new Date(dueDateFrom);
+    if (dueDateTo) where.dueDate.lte = new Date(dueDateTo);
+  }
+
+  const parentId = url.searchParams.get("parentId");
+  if (parentId === "null") {
+    where.parentId = null;
+  } else if (parentId) {
+    where.parentId = parentId;
+  }
+
+  try {
+    const [tasks, total] = await Promise.all([
+      prisma.task.findMany({
+        where,
         include: {
           labels: { include: { label: true } },
-          _count: { select: { subtasks: true, comments: true } },
+          subtasks: {
+            select: { id: true, title: true, status: true, priority: true },
+            take: 10,
+          },
+          project: { select: { id: true, name: true, color: true } },
+          assignee: { select: { id: true, name: true, image: true } },
         },
-        orderBy: { position: "asc" },
-      },
-      labels: { include: { label: true } },
-      comments: {
-        include: { user: { select: { id: true, name: true, image: true } } },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      },
-      project: { select: { id: true, name: true, color: true } },
-      assignee: { select: { id: true, name: true, image: true } },
-      blockedBy: {
-        include: {
-          blocking: { select: { id: true, title: true } },
-        },
-      },
-      blocks: {
-        include: {
-          blocked: { select: { id: true, title: true } },
-        },
-      },
-      _count: { select: { subtasks: true, comments: true } },
-    },
-    orderBy: { position: "asc" },
-  });
+        orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
+        skip: pagination.skip,
+        take: pagination.limit,
+      }),
+      prisma.task.count({ where }),
+    ]);
 
-  return NextResponse.json(tasks);
+    return paginatedResponse(tasks, total, pagination);
+  } catch {
+    return errorResponse("Failed to fetch tasks", 500);
+  }
 }
 
-export async function POST(req: NextRequest) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+export async function POST(request: NextRequest) {
+  const session = await getAuthSession();
+  if (!session) return errorResponse("Unauthorized", 401);
 
-  const body = await req.json();
-  const { title, description, status, priority, dueDate, projectId, parentId, labels, recurrence } =
-    body;
+  try {
+    const body = await request.json();
+    const data = createTaskSchema.parse(body);
 
-  if (!title?.trim()) return badRequest("Title is required");
+    // Validate recurrence if provided
+    if (data.recurrence && !isValidRecurrence(data.recurrence)) {
+      return errorResponse("Invalid recurrence pattern", 400);
+    }
 
-  // Ensure workspace exists for label creation
-  await getOrCreateWorkspace(user.id);
+    // Smart priority suggestion
+    let priority = data.priority;
+    if (!priority && data.autoSuggestPriority) {
+      priority = suggestPriority({
+        title: data.title,
+        description: data.description,
+        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+      });
+    }
 
-  const maxPosition = await prisma.task.aggregate({
-    where: { creatorId: user.id, parentId: parentId || null, projectId: projectId || null },
-    _max: { position: true },
-  });
+    const task = await prisma.task.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        status: data.status || "TODO",
+        priority: priority || "P3",
+        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+        startDate: data.startDate ? new Date(data.startDate) : undefined,
+        projectId: data.projectId,
+        sectionId: data.sectionId,
+        assigneeId: data.assigneeId,
+        creatorId: session.user.id,
+        parentId: data.parentId,
+        recurrence: data.recurrence
+          ? (data.recurrence as Prisma.InputJsonValue)
+          : undefined,
+        labels: data.labelIds
+          ? {
+              create: data.labelIds.map((labelId) => ({ labelId })),
+            }
+          : undefined,
+      },
+      include: {
+        labels: { include: { label: true } },
+        project: { select: { id: true, name: true, color: true } },
+        assignee: { select: { id: true, name: true, image: true } },
+      },
+    });
 
-  const task = await prisma.task.create({
-    data: {
-      title: title.trim(),
-      description: description || null,
-      status: status || "TODO",
-      priority: priority || "P3",
-      position: (maxPosition._max.position ?? 0) + 1,
-      dueDate: dueDate ? new Date(dueDate) : null,
-      projectId: projectId || null,
-      parentId: parentId || null,
-      creatorId: user.id,
-      recurrence: recurrence || null,
-      labels: labels?.length
-        ? {
-            create: labels.map((labelId: string) => ({ labelId })),
-          }
-        : undefined,
-    },
-    include: {
-      subtasks: true,
-      labels: { include: { label: true } },
-      project: { select: { id: true, name: true, color: true } },
-      assignee: { select: { id: true, name: true, image: true } },
-      _count: { select: { subtasks: true, comments: true } },
-    },
-  });
+    // Auto-generate subtasks if requested
+    let subtaskSuggestions: { title: string; priority: string }[] = [];
+    if (data.autoSuggestSubtasks) {
+      subtaskSuggestions = suggestSubtasks({
+        title: data.title,
+        description: data.description,
+      });
 
-  return NextResponse.json(task, { status: 201 });
+      await prisma.task.createMany({
+        data: subtaskSuggestions.map((s, i) => ({
+          title: s.title,
+          priority: s.priority as TaskPriority,
+          status: "TODO" as TaskStatus,
+          creatorId: session.user.id,
+          parentId: task.id,
+          projectId: data.projectId,
+          position: i,
+        })),
+      });
+    }
+
+    // Create activity
+    await prisma.activity.create({
+      data: {
+        type: "TASK_CREATED",
+        userId: session.user.id,
+        taskId: task.id,
+        projectId: data.projectId,
+        meta: { title: data.title },
+      },
+    });
+
+    // Fetch with subtasks included
+    const fullTask = await prisma.task.findUnique({
+      where: { id: task.id },
+      include: {
+        labels: { include: { label: true } },
+        subtasks: {
+          select: { id: true, title: true, status: true, priority: true },
+        },
+        project: { select: { id: true, name: true, color: true } },
+        assignee: { select: { id: true, name: true, image: true } },
+      },
+    });
+
+    return NextResponse.json(fullTask, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return errorResponse(error.issues[0].message, 400);
+    }
+    return errorResponse("Failed to create task", 500);
+  }
 }
