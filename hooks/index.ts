@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback } from "react";
-import { useTaskStore } from "../stores";
-import type { Task, TaskStatus, TaskPriority } from "../types";
+import { useTaskStore } from "../src/stores/task-store";
+import type { Task } from "../src/stores/task-store";
+
+type TaskStatus = string;
+type TaskPriority = string;
 
 const TASK_INCLUDE = "include=assignee,creator,labels,subtasks,blockedBy,blocks,section,project";
 
@@ -16,7 +19,7 @@ export function useTasks() {
       const res = await fetch(`/api/tasks?${TASK_INCLUDE}`);
       if (!res.ok) throw new Error("Failed to fetch tasks");
       const data = await res.json();
-      setTasks(data.tasks);
+      setTasks(data.tasks, data.pagination ?? { page: 1, limit: 20, total: data.tasks?.length ?? 0, totalPages: 1 });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {

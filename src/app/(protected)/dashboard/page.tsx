@@ -24,7 +24,7 @@ export default function DashboardPage() {
 
   // Re-fetch when filters change
   useEffect(() => {
-    fetchTasks(activeProjectId || undefined);
+    fetchTasks();
   }, [filters, activeProjectId, fetchTasks]);
 
   const getTitle = () => {

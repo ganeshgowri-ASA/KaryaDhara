@@ -110,7 +110,7 @@ export function ListView({
 
             {task.labels?.slice(0, 2).map((tl) => (
               <Badge
-                key={tl.labelId}
+                key={tl.label.id}
                 className="text-[10px] px-1 py-0 flex-shrink-0"
                 style={{ backgroundColor: tl.label.color, color: "#fff" }}
               >

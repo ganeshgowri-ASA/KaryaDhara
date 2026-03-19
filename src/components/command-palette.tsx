@@ -199,7 +199,7 @@ export function CommandPalette() {
                       className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground aria-selected:bg-accent"
                       onSelect={() =>
                         handleSelect(() => {
-                          useTaskStore.getState().setSelectedTaskId(task.id);
+                          useTaskStore.getState().setSelectedTask(task);
                           useUIStore.getState().setTaskDetailOpen(true);
                         })
                       }
