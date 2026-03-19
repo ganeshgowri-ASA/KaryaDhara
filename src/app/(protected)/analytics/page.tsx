@@ -1,17 +1,14 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { AnalyticsDashboard } from "@/components/dashboard/analytics-dashboard";
 
-export default function DashboardPage() {
-  const { data: session } = useSession();
-
+export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Analytics</h2>
         <p className="text-muted-foreground">
-          Welcome back, {session?.user?.name || "User"}
+          Task completion trends and productivity metrics
         </p>
       </div>
 
