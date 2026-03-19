@@ -8,6 +8,39 @@ import {
 } from "@/lib/api-helpers";
 import { Prisma } from "@prisma/client";
 
+const taskInclude = {
+  subtasks: {
+    include: {
+      labels: { include: { label: true } },
+      _count: { select: { subtasks: true, comments: true } },
+    },
+    orderBy: { position: "asc" as const },
+  },
+  labels: { include: { label: true } },
+  comments: {
+    include: { user: { select: { id: true, name: true, image: true } } },
+    orderBy: { createdAt: "desc" as const },
+    take: 5,
+  },
+  project: { select: { id: true, name: true, color: true } },
+  assignee: { select: { id: true, name: true, image: true } },
+  creator: { select: { id: true, name: true, image: true } },
+  section: { select: { id: true, name: true, color: true } },
+  blockedBy: {
+    include: {
+      blocking: { select: { id: true, title: true } },
+      blocked: { select: { id: true, title: true } },
+    },
+  },
+  blocks: {
+    include: {
+      blocking: { select: { id: true, title: true } },
+      blocked: { select: { id: true, title: true } },
+    },
+  },
+  _count: { select: { subtasks: true, comments: true } },
+};
+
 export async function GET(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return unauthorized();
@@ -46,38 +79,11 @@ export async function GET(req: NextRequest) {
 
   const tasks = await prisma.task.findMany({
     where,
-    include: {
-      subtasks: {
-        include: {
-          labels: { include: { label: true } },
-          _count: { select: { subtasks: true, comments: true } },
-        },
-        orderBy: { position: "asc" },
-      },
-      labels: { include: { label: true } },
-      comments: {
-        include: { user: { select: { id: true, name: true, image: true } } },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      },
-      project: { select: { id: true, name: true, color: true } },
-      assignee: { select: { id: true, name: true, image: true } },
-      blockedBy: {
-        include: {
-          blocking: { select: { id: true, title: true } },
-        },
-      },
-      blocks: {
-        include: {
-          blocked: { select: { id: true, title: true } },
-        },
-      },
-      _count: { select: { subtasks: true, comments: true } },
-    },
+    include: taskInclude,
     orderBy: { position: "asc" },
   });
 
-  return NextResponse.json(tasks);
+  return NextResponse.json({ tasks });
 }
 
 export async function POST(req: NextRequest) {
@@ -85,8 +91,20 @@ export async function POST(req: NextRequest) {
   if (!user) return unauthorized();
 
   const body = await req.json();
-  const { title, description, status, priority, dueDate, projectId, parentId, labels, recurrence } =
-    body;
+  const {
+    title,
+    description,
+    status,
+    priority,
+    dueDate,
+    startDate,
+    projectId,
+    sectionId,
+    assigneeId,
+    parentId,
+    labels,
+    recurrence,
+  } = body;
 
   if (!title?.trim()) return badRequest("Title is required");
 
@@ -106,7 +124,10 @@ export async function POST(req: NextRequest) {
       priority: priority || "P3",
       position: (maxPosition._max.position ?? 0) + 1,
       dueDate: dueDate ? new Date(dueDate) : null,
+      startDate: startDate ? new Date(startDate) : null,
       projectId: projectId || null,
+      sectionId: sectionId || null,
+      assigneeId: assigneeId || null,
       parentId: parentId || null,
       creatorId: user.id,
       recurrence: recurrence || null,
@@ -116,14 +137,8 @@ export async function POST(req: NextRequest) {
           }
         : undefined,
     },
-    include: {
-      subtasks: true,
-      labels: { include: { label: true } },
-      project: { select: { id: true, name: true, color: true } },
-      assignee: { select: { id: true, name: true, image: true } },
-      _count: { select: { subtasks: true, comments: true } },
-    },
+    include: taskInclude,
   });
 
-  return NextResponse.json(task, { status: 201 });
+  return NextResponse.json({ task }, { status: 201 });
 }

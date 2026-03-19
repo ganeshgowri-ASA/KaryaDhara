@@ -2,6 +2,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser, unauthorized, notFound } from "@/lib/api-helpers";
 
+const taskInclude = {
+  subtasks: {
+    include: {
+      labels: { include: { label: true } },
+      _count: { select: { subtasks: true, comments: true } },
+    },
+    orderBy: { position: "asc" as const },
+  },
+  labels: { include: { label: true } },
+  comments: {
+    include: { user: { select: { id: true, name: true, image: true } } },
+    orderBy: { createdAt: "desc" as const },
+  },
+  project: { select: { id: true, name: true, color: true } },
+  assignee: { select: { id: true, name: true, image: true } },
+  creator: { select: { id: true, name: true, image: true } },
+  section: { select: { id: true, name: true, color: true } },
+  blockedBy: {
+    include: {
+      blocking: { select: { id: true, title: true } },
+      blocked: { select: { id: true, title: true } },
+    },
+  },
+  blocks: {
+    include: {
+      blocking: { select: { id: true, title: true } },
+      blocked: { select: { id: true, title: true } },
+    },
+  },
+  _count: { select: { subtasks: true, comments: true } },
+};
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
@@ -11,33 +43,11 @@ export async function GET(
 
   const task = await prisma.task.findFirst({
     where: { id: params.id, creatorId: user.id },
-    include: {
-      subtasks: {
-        include: {
-          labels: { include: { label: true } },
-          _count: { select: { subtasks: true, comments: true } },
-        },
-        orderBy: { position: "asc" },
-      },
-      labels: { include: { label: true } },
-      comments: {
-        include: { user: { select: { id: true, name: true, image: true } } },
-        orderBy: { createdAt: "desc" },
-      },
-      project: { select: { id: true, name: true, color: true } },
-      assignee: { select: { id: true, name: true, image: true } },
-      blockedBy: {
-        include: { blocking: { select: { id: true, title: true } } },
-      },
-      blocks: {
-        include: { blocked: { select: { id: true, title: true } } },
-      },
-      _count: { select: { subtasks: true, comments: true } },
-    },
+    include: taskInclude,
   });
 
   if (!task) return notFound("Task not found");
-  return NextResponse.json(task);
+  return NextResponse.json({ task });
 }
 
 export async function PATCH(
@@ -59,8 +69,11 @@ export async function PATCH(
     status,
     priority,
     dueDate,
+    startDate,
     position,
     projectId,
+    sectionId,
+    assigneeId,
     parentId,
     recurrence,
     labels,
@@ -78,8 +91,11 @@ export async function PATCH(
   }
   if (priority !== undefined) data.priority = priority;
   if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null;
+  if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
   if (position !== undefined) data.position = position;
   if (projectId !== undefined) data.projectId = projectId || null;
+  if (sectionId !== undefined) data.sectionId = sectionId || null;
+  if (assigneeId !== undefined) data.assigneeId = assigneeId || null;
   if (parentId !== undefined) data.parentId = parentId || null;
   if (recurrence !== undefined) data.recurrence = recurrence;
   if (isArchived !== undefined) data.isArchived = isArchived;
@@ -100,19 +116,7 @@ export async function PATCH(
   const task = await prisma.task.update({
     where: { id: params.id },
     data,
-    include: {
-      subtasks: {
-        include: {
-          labels: { include: { label: true } },
-          _count: { select: { subtasks: true, comments: true } },
-        },
-        orderBy: { position: "asc" },
-      },
-      labels: { include: { label: true } },
-      project: { select: { id: true, name: true, color: true } },
-      assignee: { select: { id: true, name: true, image: true } },
-      _count: { select: { subtasks: true, comments: true } },
-    },
+    include: taskInclude,
   });
 
   // Log activity
@@ -135,7 +139,7 @@ export async function PATCH(
     /* activity logging is best-effort */
   }
 
-  return NextResponse.json(task);
+  return NextResponse.json({ task });
 }
 
 export async function DELETE(
@@ -151,6 +155,5 @@ export async function DELETE(
   if (!existing) return notFound("Task not found");
 
   await prisma.task.delete({ where: { id: params.id } });
-
   return NextResponse.json({ success: true });
 }
