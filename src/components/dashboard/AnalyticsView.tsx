@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
+  PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import {
   CheckCircle, Clock, AlertTriangle, FolderOpen, Users, TrendingUp,
@@ -52,7 +52,6 @@ export function AnalyticsView() {
   if (!data) return <div className="p-6 text-center text-gray-500">No analytics data available</div>;
 
   const statusData = Object.entries(data.statusDistribution).map(([name, value]) => ({ name, value }));
-  const priorityData = Object.entries(data.priorityDistribution).map(([name, value]) => ({ name, value }));
   const completionRate = data.totalTasks > 0 ? Math.round((data.completedTasks / data.totalTasks) * 100) : 0;
 
   return (
@@ -62,7 +61,6 @@ export function AnalyticsView() {
         <span className="text-sm text-gray-500">{currentWorkspace?.name}</span>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard icon={<CheckCircle className="w-5 h-5 text-green-500" />} label="Completed" value={data.completedTasks} subtext={`${completionRate}% completion rate`} color="green" />
         <KPICard icon={<Clock className="w-5 h-5 text-blue-500" />} label="Total Tasks" value={data.totalTasks} subtext="across all projects" color="blue" />
@@ -70,9 +68,7 @@ export function AnalyticsView() {
         <KPICard icon={<FolderOpen className="w-5 h-5 text-purple-500" />} label="Projects" value={data.totalProjects} subtext="active projects" color="purple" />
       </div>
 
-      {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Weekly Trend */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border dark:border-gray-700">
           <h3 className="text-lg font-semibold mb-4 dark:text-white flex items-center gap-2">
             <TrendingUp className="w-5 h-5" /> Weekly Trend
@@ -90,7 +86,6 @@ export function AnalyticsView() {
           </ResponsiveContainer>
         </div>
 
-        {/* Status Distribution */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border dark:border-gray-700">
           <h3 className="text-lg font-semibold mb-4 dark:text-white flex items-center gap-2">
             <PieIcon className="w-5 h-5" /> Task Status
@@ -99,7 +94,7 @@ export function AnalyticsView() {
             <PieChart>
               <Pie data={statusData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                 {statusData.map((entry, i) => (
-                  <Cell key={i} fill={STATUS_COLORS[entry.name] || COLORS[i % COLORS.length]} />
+                  <Cell key={`cell-${i}`} fill={STATUS_COLORS[entry.name] || COLORS[i % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip />
@@ -108,9 +103,7 @@ export function AnalyticsView() {
         </div>
       </div>
 
-      {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Tasks by Assignee */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border dark:border-gray-700">
           <h3 className="text-lg font-semibold mb-4 dark:text-white flex items-center gap-2">
             <Users className="w-5 h-5" /> Workload by Engineer
@@ -128,7 +121,6 @@ export function AnalyticsView() {
           </ResponsiveContainer>
         </div>
 
-        {/* Project Progress */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border dark:border-gray-700">
           <h3 className="text-lg font-semibold mb-4 dark:text-white flex items-center gap-2">
             <BarChart3 className="w-5 h-5" /> Project Progress
