@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isToday } from 'date-fns';
 
 interface CalendarTask {
   id: string;
@@ -56,7 +56,6 @@ export function CalendarView({ tasks, onTaskClick, onDateClick }: CalendarViewPr
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-700">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-bold dark:text-white">
@@ -83,8 +82,6 @@ export function CalendarView({ tasks, onTaskClick, onDateClick }: CalendarViewPr
           </button>
         </div>
       </div>
-
-      {/* Day headers */}
       <div className="grid grid-cols-7 border-b dark:border-gray-700">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
           <div key={day} className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
@@ -92,15 +89,12 @@ export function CalendarView({ tasks, onTaskClick, onDateClick }: CalendarViewPr
           </div>
         ))}
       </div>
-
-      {/* Calendar grid */}
       <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-auto">
         {days.map((day, i) => {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayTasks = tasksByDate[dateKey] || [];
           const isCurrentMonth = isSameMonth(day, currentDate);
           const isCurrentDay = isToday(day);
-
           return (
             <div
               key={i}
