@@ -1,28 +1,27 @@
 "use client";
 
 import { useCallback } from "react";
-import { useTaskStore } from "../stores";
-import type { Task, TaskStatus, TaskPriority } from "../types";
+import { useTaskStore } from "@/stores";
+import type { Task, TaskStatus, TaskPriority } from "@/types";
 
 const TASK_INCLUDE = "include=assignee,creator,labels,subtasks,blockedBy,blocks,section,project";
 
 export function useTasks() {
-  const { tasks, setTasks, updateTask, setLoading, setError } = useTaskStore();
+  const { tasks, setTasks, updateTask, setIsLoading } = useTaskStore();
 
   const fetchTasks = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setIsLoading(true);
     try {
       const res = await fetch(`/api/tasks?${TASK_INCLUDE}`);
       if (!res.ok) throw new Error("Failed to fetch tasks");
       const data = await res.json();
       setTasks(data.tasks);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+    } catch {
+      // silently fail
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [setTasks, setLoading, setError]);
+  }, [setTasks, setIsLoading]);
 
   const updateTaskStatus = useCallback(
     async (taskId: string, status: TaskStatus) => {

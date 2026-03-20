@@ -14,7 +14,7 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import type { Task, TaskStatus, TaskPriority } from "../../../types";
+import type { Task, TaskStatus, TaskPriority } from "@/types";
 
 interface TaskQuickActionsProps {
   task: Task;

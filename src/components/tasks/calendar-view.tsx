@@ -30,7 +30,7 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useViewStore } from "../../../stores";
+import { useViewStore } from "@/stores";
 import {
   PRIORITY_COLORS,
   STATUS_COLORS,
@@ -38,7 +38,7 @@ import {
   type TaskStatus,
   type TaskPriority,
   type CalendarMode,
-} from "../../../types";
+} from "@/types";
 
 interface CalendarViewProps {
   tasks: Task[];

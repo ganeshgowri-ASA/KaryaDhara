@@ -17,7 +17,7 @@ import {
   type Task,
   type TaskStatus,
   type TaskPriority,
-} from "../../../types";
+} from "@/types";
 
 interface KanbanViewProps {
   tasks: Task[];

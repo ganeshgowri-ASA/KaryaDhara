@@ -3,8 +3,8 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useViewStore } from "../../../stores";
-import type { DateRangeFilter } from "../../../types";
+import { useViewStore } from "@/stores";
+import type { DateRangeFilter } from "@/types";
 
 const filters: { value: DateRangeFilter; label: string }[] = [
   { value: "all", label: "All" },

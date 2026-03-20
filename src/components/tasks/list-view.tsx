@@ -12,7 +12,7 @@ import {
   type Task,
   type TaskStatus,
   type TaskPriority,
-} from "../../../types";
+} from "@/types";
 import { TaskQuickActions } from "./task-quick-actions";
 
 interface ListViewProps {
@@ -166,7 +166,7 @@ export function ListView({
                   {task.assignee.name?.[0]?.toUpperCase() || "?"}
                 </div>
                 <span className="text-xs text-muted-foreground truncate">
-                  {task.assignee.name || task.assignee.email}
+                  {task.assignee.name || "Unknown"}
                 </span>
               </>
             ) : (

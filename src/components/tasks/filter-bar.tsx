@@ -11,13 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useViewStore } from "../../../stores";
+import { useViewStore } from "@/stores";
 import {
   STATUS_LABELS,
   PRIORITY_LABELS,
   type TaskStatus,
   type TaskPriority,
-} from "../../../types";
+} from "@/types";
 import { DateRangeFilters } from "./date-range-filters";
 
 export function FilterBar() {

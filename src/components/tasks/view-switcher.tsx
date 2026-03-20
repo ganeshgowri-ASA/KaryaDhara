@@ -4,8 +4,8 @@ import React from "react";
 import { Calendar, List, LayoutGrid, GanttChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useViewStore } from "../../../stores";
-import type { ViewMode } from "../../../types";
+import { useViewStore } from "@/stores";
+import type { ViewMode } from "@/types";
 
 const views: { mode: ViewMode; label: string; icon: React.ReactNode }[] = [
   { mode: "list", label: "List", icon: <List className="h-4 w-4" /> },
