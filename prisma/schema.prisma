@@ -49,6 +49,10 @@ model User {
   timers          Timer[]
   apiKeys         ApiKey[]
   notifications   Notification[]
+    // Wave 3 Relations
+  uploadedAttachments Attachment[]    @relation("UserAttachments")
+  multiAssignedTasks  TaskAssignee[]  @relation("MultiAssignedTasks")
+  timeEntries         TimeEntry[]     @relation("UserTimeEntries")
 
   @@index([email])
 }
@@ -162,6 +166,7 @@ model Project {
   status      ProjectStatus @default(ACTIVE)
   isPublic    Boolean       @default(false)
   position    Float         @default(0)
+    progress    Float      @default(0)
   startDate   DateTime?
   endDate     DateTime?
   createdAt   DateTime      @default(now())
@@ -260,6 +265,12 @@ model Task {
   blockedBy     TaskDependency[] @relation("Blocking")
   blocks        TaskDependency[] @relation("Blocked")
   notifications Notification[]
+
+  // Wave 3 Relations
+  checklist       ChecklistItem[]   @relation("TaskChecklist")
+  attachments     Attachment[]      @relation("TaskAttachments")
+  multiAssignees  TaskAssignee[]    @relation("MultiAssignees")
+  timeEntries     TimeEntry[]       @relation("TaskTimeEntries")
 
   @@index([projectId])
   @@index([sectionId])
@@ -565,4 +576,69 @@ model Integration {
 
   @@unique([workspaceId, type])
   @@index([workspaceId])
+}
+
+
+// ————————————————————————————————————
+// WAVE 3: Checklists, Attachments, Multi-Assign, Time Tracking
+// ————————————————————————————————————
+
+model ChecklistItem {
+  id        String   @id @default(cuid())
+  title     String
+  completed Boolean  @default(false)
+  position  Int      @default(0)
+  taskId    String
+  createdAt DateTime @default(now())
+
+  task      Task     @relation("TaskChecklist", fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model Attachment {
+  id           String   @id @default(cuid())
+  name         String
+  url          String
+  size         Int
+  mimeType     String
+  taskId       String
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  task         Task     @relation("TaskAttachments", fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy   User     @relation("UserAttachments", fields: [uploadedById], references: [id])
+
+  @@index([taskId])
+}
+
+model TaskAssignee {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  task      Task     @relation("MultiAssignees", fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation("MultiAssignedTasks", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+}
+
+model TimeEntry {
+  id          String    @id @default(cuid())
+  taskId      String
+  userId      String
+  startTime   DateTime
+  endTime     DateTime?
+  duration    Int?      // in seconds
+  description String?
+  createdAt   DateTime  @default(now())
+
+  task        Task      @relation("TaskTimeEntries", fields: [taskId], references: [id], onDelete: Cascade)
+  user        User      @relation("UserTimeEntries", fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
 }
