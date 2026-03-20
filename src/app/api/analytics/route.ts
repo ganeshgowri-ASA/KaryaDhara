@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     // Project progress
     const projectProgress = projects.map(p => {
       const total = p.tasks.length;
-      const done = p.tasks.filter((t: any) => t.status === 'DONE').length;
+      const done = p.tasks.filter((t: { status: string }) => t.status === 'DONE').length;
       return {
         id: p.id,
         name: p.name,
