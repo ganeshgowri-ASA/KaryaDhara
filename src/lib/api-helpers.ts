@@ -21,6 +21,39 @@ export function notFound(message = "Not found") {
   return NextResponse.json({ error: message }, { status: 404 });
 }
 
+export function errorResponse(message: string, status: number) {
+  return NextResponse.json({ error: message }, { status });
+}
+
+export async function getAuthSession() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return null;
+  return session;
+}
+
+export function parsePagination(url: URL) {
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
+  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") || "20")));
+  const skip = (page - 1) * limit;
+  return { page, limit, skip };
+}
+
+export function paginatedResponse(
+  data: unknown[],
+  total: number,
+  pagination: { page: number; limit: number }
+) {
+  return NextResponse.json({
+    data,
+    pagination: {
+      page: pagination.page,
+      limit: pagination.limit,
+      total,
+      totalPages: Math.ceil(total / pagination.limit),
+    },
+  });
+}
+
 export async function getOrCreateWorkspace(userId: string) {
   // Find user's first workspace or create a personal one
   const membership = await prisma.workspaceMember.findFirst({

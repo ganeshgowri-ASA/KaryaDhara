@@ -22,6 +22,7 @@ export default function ProtectedLayout({
       <PomodoroTimer />
       <KeyboardShortcuts />
       <SearchDialog />
+      <NotificationCenter />
     </div>
   );
 }

@@ -41,7 +41,7 @@ export function TaskFilters() {
       </div>
 
       <Select
-        value={filters.status || "all"}
+        value={(Array.isArray(filters.status) ? filters.status[0] : filters.status) || "all"}
         onValueChange={(v) => handleFilterChange("status", v)}
       >
         <SelectTrigger className="w-[140px]">
@@ -58,7 +58,7 @@ export function TaskFilters() {
       </Select>
 
       <Select
-        value={filters.priority || "all"}
+        value={(Array.isArray(filters.priority) ? filters.priority[0] : filters.priority) || "all"}
         onValueChange={(v) => handleFilterChange("priority", v)}
       >
         <SelectTrigger className="w-[140px]">

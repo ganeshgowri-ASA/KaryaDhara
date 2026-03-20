@@ -63,7 +63,7 @@ export function useTasks() {
 
   const updateTaskDates = useCallback(
     async (taskId: string, dates: { startDate?: string; dueDate?: string }) => {
-      updateTask(taskId, dates as Partial<Task>);
+      updateTask(taskId, dates as unknown as Parameters<typeof updateTask>[1]);
       try {
         const res = await fetch(`/api/tasks/${taskId}`, {
           method: "PATCH",
@@ -100,7 +100,7 @@ export function useTasks() {
   );
 
   return {
-    tasks,
+    tasks: tasks as unknown as Task[],
     fetchTasks,
     updateTaskStatus,
     updateTaskPriority,

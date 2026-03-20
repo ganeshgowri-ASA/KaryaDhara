@@ -5,12 +5,12 @@ import { suggestSubtasks, suggestPriority } from "@/lib/smart-suggestions";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await getAuthSession();
   if (!session) return errorResponse("Unauthorized", 401);
 
-  const { id } = await params;
+  const { id } = params;
 
   try {
     const task = await prisma.task.findUnique({
