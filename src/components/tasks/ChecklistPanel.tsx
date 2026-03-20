@@ -19,7 +19,7 @@ interface ChecklistPanelProps {
   onReorder?: (items: ChecklistItem[]) => void;
 }
 
-export function ChecklistPanel({ taskId, items, onAdd, onToggle, onDelete }: ChecklistPanelProps) {
+export function ChecklistPanel({ taskId: _taskId, items, onAdd, onToggle, onDelete }: ChecklistPanelProps) {
   const [newItem, setNewItem] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
