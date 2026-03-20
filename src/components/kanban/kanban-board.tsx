@@ -39,7 +39,7 @@ export function KanbanBoard() {
   }, []);
 
   useEffect(() => {
-    fetchTasks(activeProjectId || undefined);
+    fetchTasks();
   }, [activeProjectId, fetchTasks]);
 
   const sensors = useSensors(

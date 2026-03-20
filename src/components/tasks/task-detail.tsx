@@ -81,8 +81,7 @@ export function TaskDetail() {
     setNewComment("");
     // Refresh task
     const { fetchTasks } = useTaskStore.getState();
-    const { activeProjectId } = useProjectStore.getState();
-    fetchTasks(activeProjectId || undefined);
+    fetchTasks();
   };
 
   const handleClose = () => {
@@ -354,7 +353,7 @@ export function TaskDetail() {
                 Recurrence
               </label>
               <p className="text-sm">
-                {(task.recurrence as Record<string, string>).type || "Custom"}
+                {(task.recurrence as unknown as Record<string, string>)?.type || "Custom"}
               </p>
             </div>
           )}

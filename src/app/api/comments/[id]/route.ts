@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser, unauthorized, notFound } from "@/lib/api-helpers";
+import { getAuthSession, errorResponse } from "@/lib/api-helpers";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+  const session = await getAuthSession();
+  if (!session) return errorResponse("Unauthorized", 401);
 
   const existing = await prisma.comment.findFirst({
-    where: { id: params.id, userId: user.id },
+    where: { id: params.id, userId: session.user.id },
   });
-  if (!existing) return notFound("Comment not found");
+  if (!existing) return errorResponse("Comment not found", 404);
 
   const { content } = await req.json();
 
@@ -29,13 +29,13 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+  const session = await getAuthSession();
+  if (!session) return errorResponse("Unauthorized", 401);
 
   const existing = await prisma.comment.findFirst({
-    where: { id: params.id, userId: user.id },
+    where: { id: params.id, userId: session.user.id },
   });
-  if (!existing) return notFound("Comment not found");
+  if (!existing) return errorResponse("Comment not found", 404);
 
   await prisma.comment.delete({ where: { id: params.id } });
   return NextResponse.json({ success: true });
