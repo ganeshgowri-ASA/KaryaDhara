@@ -35,14 +35,14 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { text } = await req.json();
-    if (!text) {
+    const { title } = await req.json();
+    if (!title) {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 });
     }
 
     const item = await prisma.checklistItem.create({
       data: {
-        text,
+        title,
         taskId: params.id,
       },
     });
@@ -64,14 +64,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { itemId, completed, text } = await req.json();
+    const { itemId, completed, title } = await req.json();
     if (!itemId) {
       return NextResponse.json({ error: 'itemId is required' }, { status: 400 });
     }
 
     const updateData: Record<string, unknown> = {};
     if (typeof completed === 'boolean') updateData.completed = completed;
-    if (text) updateData.text = text;
+    if (title) updateData.title = title;
 
     const item = await prisma.checklistItem.update({
       where: { id: itemId, taskId: params.id },
