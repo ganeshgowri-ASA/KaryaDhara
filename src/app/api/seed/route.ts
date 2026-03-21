@@ -272,3 +272,9 @@ export async function DELETE(request: Request) {
     );
   }
 }
+
+
+// GET /api/seed - Also triggers seed (for easy browser access)
+export async function GET() {
+  return POST();
+}
