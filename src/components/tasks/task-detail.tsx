@@ -30,6 +30,9 @@ import {
 import { useProjectStore } from "@/stores/project-store";
 import { useUIStore } from "@/stores/ui-store";
 import { Progress } from "@/components/ui/progress";
+import { AssigneePanel } from "./AssigneePanel";
+import { AttachmentPanel } from "./AttachmentPanel";
+import { ChecklistPanel } from "./ChecklistPanel";
 
 export function TaskDetail() {
   const { tasks, selectedTaskId, updateTaskApi, deleteTask, setSelectedTaskId } =
@@ -361,13 +364,23 @@ export function TaskDetail() {
 
           <Separator />
 
+          {/* Wave 3: Assignees */}
+          <AssigneePanel taskId={task.id} />
+
+          {/* Wave 3: Attachments */}
+          <AttachmentPanel taskId={task.id} />
+
+          {/* Wave 3: Checklist */}
+          <ChecklistPanel taskId={task.id} />
+
+          <Separator />
+
           {/* Comments */}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
               <MessageSquare className="h-3 w-3" />
               Comments
             </label>
-
             {task.comments?.map((comment) => (
               <div key={comment.id} className="mb-3 p-2 bg-muted rounded-md">
                 <div className="flex items-center gap-2 mb-1">
@@ -386,7 +399,6 @@ export function TaskDetail() {
                 <p className="text-sm">{comment.content}</p>
               </div>
             ))}
-
             <div className="flex gap-2">
               <Input
                 value={newComment}
