@@ -21,6 +21,8 @@ import {
   Bell,
   Timer,
   Settings,
+  GitBranch,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -51,8 +53,10 @@ export function AppSidebar() {
   const featureItems = [
     { id: "analytics", label: "Analytics", icon: BarChart3, href: "/analytics" },
     { id: "calendar", label: "Calendar", icon: Calendar, href: "/calendar" },
+    { id: "projects-view", label: "Projects", icon: FolderOpen, href: "/projects" },
+    { id: "mindmap", label: "Mind Map", icon: GitBranch, href: "/mindmap" },
     { id: "notifications", label: "Notifications", icon: Bell, href: "/notifications" },
-    { id: "pomodoro", label: "Pomodoro", icon: Timer, href: "/dashboard" },
+    { id: "pomodoro", label: "Pomodoro", icon: Timer, href: "/pomodoro" },
     { id: "labels", label: "Labels", icon: Tag, href: "/labels" },
     { id: "profile", label: "Profile", icon: Settings, href: "/profile" },
   ];
@@ -188,7 +192,7 @@ export function AppSidebar() {
             <div className="pt-4">
               <div className="flex items-center justify-between px-3 py-1">
                 <span className="text-xs font-semibold uppercase text-muted-foreground">
-                  Projects
+                  My Projects
                 </span>
                 <Link href="/dashboard">
                   <Button
