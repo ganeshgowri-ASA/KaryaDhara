@@ -7,14 +7,14 @@ import { format } from "date-fns";
 
 interface Attachment {
   id: string;
-  filename: string;
+  name: string;
   url: string;
-  fileType: string | null;
-  fileSize: number;
+  mimeType: string | null;
+  size: number;
   createdAt: string;
 }
 
-function formatFileSize(bytes: number): string {
+function formatsize(bytes: number): string {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
@@ -57,10 +57,10 @@ export function AttachmentPanel({ taskId }: { taskId: string }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          filename: file.name,
+          name: file.name,
           url: URL.createObjectURL(file),
-          fileType: file.type,
-          fileSize: file.size,
+          mimeType: file.type,
+          size: file.size,
         }),
       });
       if (res.ok) fetchAttachments();
@@ -93,11 +93,11 @@ export function AttachmentPanel({ taskId }: { taskId: string }) {
       <div className="space-y-1 mt-1">
         {attachments.map((a) => (
           <div key={a.id} className="flex items-center gap-2 p-1.5 rounded-md bg-muted/50 group">
-            {getFileIcon(a.fileType)}
+            {getFileIcon(a.mimeType)}
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">{a.filename}</p>
+              <p className="text-xs font-medium truncate">{a.name}</p>
               <p className="text-[10px] text-muted-foreground">
-                {formatFileSize(a.fileSize)} - {format(new Date(a.createdAt), 'MMM d')}
+                {formatsize(a.size)} - {format(new Date(a.createdAt), 'MMM d')}
               </p>
             </div>
             <button
