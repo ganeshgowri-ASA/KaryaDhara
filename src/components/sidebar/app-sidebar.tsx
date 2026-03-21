@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Inbox,
@@ -15,6 +16,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Hash,
+  BarChart3,
+  Calendar,
+  Bell,
+  Timer,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,6 +31,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function AppSidebar() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const { sidebarOpen, toggleSidebar, selectedView, setSelectedView, viewMode, setViewMode } =
     useUIStore();
   const { projects, labels, fetchProjects, fetchLabels, setActiveProjectId } =
@@ -39,6 +46,15 @@ export function AppSidebar() {
     { id: "inbox", label: "Inbox", icon: Inbox, href: "/dashboard" },
     { id: "my-day", label: "My Day", icon: Sun, href: "/dashboard" },
     { id: "filters", label: "Filters", icon: Filter, href: "/dashboard" },
+  ];
+
+  const featureItems = [
+    { id: "analytics", label: "Analytics", icon: BarChart3, href: "/analytics" },
+    { id: "calendar", label: "Calendar", icon: Calendar, href: "/calendar" },
+    { id: "notifications", label: "Notifications", icon: Bell, href: "/notifications" },
+    { id: "pomodoro", label: "Pomodoro", icon: Timer, href: "/dashboard" },
+    { id: "labels", label: "Labels", icon: Tag, href: "/labels" },
+    { id: "profile", label: "Profile", icon: Settings, href: "/profile" },
   ];
 
   const handleNavClick = (id: string) => {
@@ -139,6 +155,31 @@ export function AppSidebar() {
                 <Columns3 className="mr-1 h-3 w-3" />
                 Board
               </Button>
+            </div>
+          )}
+
+          {/* Feature Items */}
+          {sidebarOpen && (
+            <div className="pt-4">
+              <div className="px-3 py-1">
+                <span className="text-xs font-semibold uppercase text-muted-foreground">
+                  Features
+                </span>
+              </div>
+              {featureItems.map((item) => (
+                <Link key={item.id} href={item.href}>
+                  <button
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent",
+                      pathname === item.href &&
+                        "bg-accent text-accent-foreground font-medium"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                </Link>
+              ))}
             </div>
           )}
 
