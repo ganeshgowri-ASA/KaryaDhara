@@ -11,6 +11,15 @@ import {
   Download,
   Bell,
   Settings,
+  Calendar,
+  FolderKanban,
+  Clock,
+  GanttChart,
+  Brain,
+  Timer,
+  Columns3,
+  Briefcase,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,6 +28,15 @@ import { useSearchStore } from "@/stores/search-store";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tasks", label: "Tasks", icon: CheckSquare },
+  { href: "/kanban", label: "Kanban Board", icon: Columns3 },
+  { href: "/projects", label: "Projects", icon: FolderKanban },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/timeline", label: "Timeline", icon: GanttChart },
+  { href: "/time-tracking", label: "Time Tracking", icon: Clock },
+  { href: "/recurring-tasks", label: "Recurring Tasks", icon: RefreshCw },
+  { href: "/mindmap", label: "Mind Map", icon: Brain },
+  { href: "/pomodoro", label: "Pomodoro", icon: Timer },
+  { href: "/workspace", label: "Workspaces", icon: Briefcase },
   { href: "/labels", label: "Labels", icon: Tags },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/notifications", label: "Notifications", icon: Bell },
@@ -32,7 +50,7 @@ export function Sidebar() {
 
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r bg-background">
-      <div className="flex-1 space-y-1 p-3">
+      <div className="flex-1 space-y-1 overflow-y-auto p-3">
         <Button
           variant="outline"
           className="mb-3 w-full justify-start text-muted-foreground"
