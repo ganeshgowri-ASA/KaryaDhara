@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Coffee, Brain, Target, SkipForward } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Brain, Target, SkipForward, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
-const TIMER_CONFIG = {
+interface TimerConfigItem {
+  duration: number;
+  label: string;
+  color: string;
+  icon: LucideIcon;
+}
+
+const TIMER_CONFIG: Record<TimerMode, TimerConfigItem> = {
   focus: { duration: 25 * 60, label: 'Focus Time', color: 'bg-red-500', icon: Brain },
   shortBreak: { duration: 5 * 60, label: 'Short Break', color: 'bg-green-500', icon: Coffee },
   longBreak: { duration: 15 * 60, label: 'Long Break', color: 'bg-blue-500', icon: Coffee },
@@ -21,11 +28,12 @@ export default function PomodoroPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
   const [totalFocusMinutes, setTotalFocusMinutes] = useState(0);
-  const [currentTask, setCurrentTask] = useState('Deep work session');
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [currentTask] = useState('Deep work session');
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const config = TIMER_CONFIG[mode];
   const progress = ((config.duration - timeLeft) / config.duration) * 100;
+  const Icon = config.icon;
 
   const switchMode = useCallback((newMode: TimerMode) => {
     setMode(newMode);
@@ -81,9 +89,9 @@ export default function PomodoroPage() {
   };
 
   const todaysSessions = [
-    { task: 'Design system review', duration: 25, completed: true },
-    { task: 'API integration work', duration: 25, completed: true },
-    { task: 'Bug fixes & testing', duration: 25, completed: true },
+    { task: 'Design system review', duration: 25 },
+    { task: 'API integration work', duration: 25 },
+    { task: 'Bug fixes & testing', duration: 25 },
   ];
 
   return (
@@ -94,7 +102,6 @@ export default function PomodoroPage() {
           <p className="text-muted-foreground mt-1">Stay focused, take breaks, be productive</p>
         </div>
 
-        {/* Mode Selector */}
         <div className="flex gap-2 justify-center">
           {(['focus', 'shortBreak', 'longBreak'] as TimerMode[]).map(m => (
             <Button
@@ -108,11 +115,10 @@ export default function PomodoroPage() {
           ))}
         </div>
 
-        {/* Timer Card */}
         <Card className="text-center">
           <CardContent className="pt-8 pb-6">
             <div className="flex justify-center mb-4">
-              <config.icon className="h-8 w-8 text-primary" />
+              <Icon className="h-8 w-8 text-primary" />
             </div>
             <div className="text-7xl font-mono font-bold mb-4 tabular-nums">
               {formatTime(timeLeft)}
@@ -139,12 +145,11 @@ export default function PomodoroPage() {
           </CardContent>
         </Card>
 
-        {/* Stats Row */}
         <div className="grid grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-muted-foreground flex items-center gap-1">
-                <Target className="h-3.5 w-3.5" /> Sessions Today
+                <Target className="h-3.5 w-3.5" /> Sessions
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -155,7 +160,7 @@ export default function PomodoroPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-muted-foreground flex items-center gap-1">
-                <Brain className="h-3.5 w-3.5" /> Focus Minutes
+                <Brain className="h-3.5 w-3.5" /> Focus Min
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -176,7 +181,6 @@ export default function PomodoroPage() {
           </Card>
         </div>
 
-        {/* Today's Sessions */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Today&apos;s Sessions</CardTitle>
